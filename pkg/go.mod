@@ -1,3 +1,3 @@
-module tec-study/scan/vicente
+module github.com/invisiblelab-dev/certwatch/pkg
 
 go 1.20
