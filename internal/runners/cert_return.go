@@ -1,4 +1,4 @@
-package main
+package runners
 
 import (
 	"encoding/json"
@@ -14,17 +14,15 @@ type SSLInfoArray struct {
 	DomainsSSLs []DomainSSLInfo
 }
 
-func main() {
-	domainsString := []string{"https://www.youtube.com/", "https://www.facebook.com/", "https://www.invisiblelab.dev/", "https://www.golangprograms.com/"}
+func CreateSSLJSON(domainsArray []string) {
 	sslInfoArray := SSLInfoArray{}
 
-	for _, domain := range domainsString {
-		certificate := cert_getter(domain, true)
+	for _, domain := range domainsArray {
+		certificate := Cert_getter(domain, true)
 		domainSSLInfo := DomainSSLInfo{Domain: domain, SSL: certificate}
 		sslInfoArray.DomainsSSLs = append(sslInfoArray.DomainsSSLs, domainSSLInfo)
 	}
 
 	file, _ := json.MarshalIndent(sslInfoArray, "", " ")
 	_ = os.WriteFile("UserSSLs/ssls.json", file, 0644)
-
 }

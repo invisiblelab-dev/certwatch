@@ -1,6 +1,4 @@
-/// from https://systemweakness.com/monitoring-ssl-certificates-with-go-4daca8559dc2
-
-package main
+package runners
 
 import (
 	"crypto/tls"
@@ -27,7 +25,7 @@ type CertificateInfo struct {
 	PublicKeyAlgorithm string
 }
 
-func cert_getter(url string, onlyLeaf bool) SSLInfo {
+func Cert_getter(url string, onlyLeaf bool) SSLInfo {
 
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
