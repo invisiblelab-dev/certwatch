@@ -4,7 +4,7 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"time"
@@ -27,7 +27,7 @@ type CertificateInfo struct {
 	PublicKeyAlgorithm string
 }
 
-func cert_getter(url string, onlyLeaf bool) []byte {
+func cert_getter(url string, onlyLeaf bool) SSLInfo {
 
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
@@ -41,7 +41,7 @@ func cert_getter(url string, onlyLeaf bool) []byte {
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return nil
+		return SSLInfo{}
 	}
 	defer resp.Body.Close()
 
@@ -56,36 +56,27 @@ func cert_getter(url string, onlyLeaf bool) []byte {
 	// Retrieve information about the peer certificates
 	if onlyLeaf {
 		cert := resp.TLS.PeerCertificates[0]
-		peerCertificate := CertificateInfo{
-			Subject:            cert.Subject.String(),
-			Issuer:             cert.Issuer.String(),
-			NotBefore:          cert.NotBefore,
-			NotAfter:           cert.NotAfter,
-			SignatureAlgorithm: cert.SignatureAlgorithm.String(),
-			PublicKeyAlgorithm: cert.PublicKeyAlgorithm.String(),
-		}
+		peerCertificate := peerCertificate(cert)
 		sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
 
 	} else {
 		for _, cert := range resp.TLS.PeerCertificates {
-			peerCertificate := CertificateInfo{
-				Subject:            cert.Subject.String(),
-				Issuer:             cert.Issuer.String(),
-				NotBefore:          cert.NotBefore,
-				NotAfter:           cert.NotAfter,
-				SignatureAlgorithm: cert.SignatureAlgorithm.String(),
-				PublicKeyAlgorithm: cert.PublicKeyAlgorithm.String(),
-			}
+			peerCertificate := peerCertificate(cert)
 			sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
 		}
 	}
 
-	// Marshal the SSLInfo struct to JSON
-	sslInfoJSON, err := json.Marshal(sslInfo)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return nil
-	}
+	return sslInfo
+}
 
-	return sslInfoJSON
+func peerCertificate(cert *x509.Certificate) CertificateInfo {
+	certificate := CertificateInfo{
+		Subject:            cert.Subject.String(),
+		Issuer:             cert.Issuer.String(),
+		NotBefore:          cert.NotBefore,
+		NotAfter:           cert.NotAfter,
+		SignatureAlgorithm: cert.SignatureAlgorithm.String(),
+		PublicKeyAlgorithm: cert.PublicKeyAlgorithm.String(),
+	}
+	return certificate
 }

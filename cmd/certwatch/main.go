@@ -1,4 +1,4 @@
-package certwatchCLI
+package certwatch
 
 func main() {
 
