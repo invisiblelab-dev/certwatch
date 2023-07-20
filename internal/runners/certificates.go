@@ -3,8 +3,11 @@ package runners
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -88,13 +91,15 @@ type SSLInfoArray struct {
 	DomainsSSLs []DomainSSLInfo
 }
 
-func CertArrayGetter(domainsArray []string) SSLInfoArray {
+func CertArrayGetter() SSLInfoArray {
+	domainsArray := ReadDomains()
 	sslInfoArray := SSLInfoArray{}
 
-	for _, domain := range domainsArray {
-		certificate := CertGetter(domain, true)
-		domainSSLInfo := DomainSSLInfo{Domain: domain, SSL: certificate}
+	for _, domain := range domainsArray.Domains {
+		certificate := CertGetter(domain.Domain, true)
+		domainSSLInfo := DomainSSLInfo{Domain: domain.Domain, SSL: certificate}
 		sslInfoArray.DomainsSSLs = append(sslInfoArray.DomainsSSLs, domainSSLInfo)
+
 	}
 
 	return sslInfoArray
@@ -109,7 +114,7 @@ type DomainsDeadlines struct {
 	Deadlines []DomainDeadline
 }
 
-func CalculateDeadline(certificates SSLInfoArray) DomainsDeadlines {
+func CalculateDaysToDeadline(certificates SSLInfoArray) DomainsDeadlines {
 	domainsDeadlines := DomainsDeadlines{}
 	for i := 0; i < len(certificates.DomainsSSLs); i++ {
 		timeHours := time.Until(certificates.DomainsSSLs[i].SSL.PeerCertificates[0].NotAfter)
@@ -118,4 +123,55 @@ func CalculateDeadline(certificates SSLInfoArray) DomainsDeadlines {
 		domainsDeadlines.Deadlines = append(domainsDeadlines.Deadlines, deadline)
 	}
 	return domainsDeadlines
+}
+
+type Domain struct {
+	Domain  string    `json:"domain"`
+	AddTime time.Time `json:"addTime"`
+}
+
+type DomainsArray struct {
+	Domains []Domain `json:"domains"`
+}
+
+func AddDomain(domain string) error {
+	domains := ReadDomains()
+	newDomain := Domain{Domain: domain, AddTime: time.Now()}
+
+	for _, listedDomain := range domains.Domains {
+		if listedDomain.Domain == domain {
+			return errors.New("Domain already added")
+		} else {
+			continue
+		}
+	}
+
+	domains.Domains = append(domains.Domains, newDomain)
+
+	file, err := json.MarshalIndent(domains, "", " ")
+	if err != nil {
+		fmt.Println("not indenting file, error: ", err)
+		return err
+	}
+
+	err = os.WriteFile("domainsStorage.json", file, 0644)
+	if err != nil {
+		fmt.Println("not writing file, error: ", err)
+		return err
+	}
+	return nil
+}
+
+func ReadDomains() DomainsArray {
+	data, err := os.ReadFile("domainsStorage.json")
+	if err != nil {
+		fmt.Println("File reading error: ", err)
+	}
+
+	var domains DomainsArray
+	err = json.Unmarshal(data, &domains)
+	if err != nil {
+		fmt.Println("File parsing error: ", err)
+	}
+	return domains
 }
