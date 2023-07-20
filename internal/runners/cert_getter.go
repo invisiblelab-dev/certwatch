@@ -25,7 +25,7 @@ type CertificateInfo struct {
 	PublicKeyAlgorithm string
 }
 
-func Cert_getter(url string, onlyLeaf bool) SSLInfo {
+func CertGetter(url string, onlyLeaf bool) SSLInfo {
 
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
@@ -77,4 +77,25 @@ func peerCertificate(cert *x509.Certificate) CertificateInfo {
 		PublicKeyAlgorithm: cert.PublicKeyAlgorithm.String(),
 	}
 	return certificate
+}
+
+type DomainSSLInfo struct {
+	Domain string
+	SSL    SSLInfo
+}
+
+type SSLInfoArray struct {
+	DomainsSSLs []DomainSSLInfo
+}
+
+func CertArrayGetter(domainsArray []string) SSLInfoArray {
+	sslInfoArray := SSLInfoArray{}
+
+	for _, domain := range domainsArray {
+		certificate := CertGetter(domain, true)
+		domainSSLInfo := DomainSSLInfo{Domain: domain, SSL: certificate}
+		sslInfoArray.DomainsSSLs = append(sslInfoArray.DomainsSSLs, domainSSLInfo)
+	}
+
+	return sslInfoArray
 }
