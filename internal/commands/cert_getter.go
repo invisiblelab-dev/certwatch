@@ -27,7 +27,7 @@ type CertificateInfo struct {
 	PublicKeyAlgorithm string
 }
 
-func cert_getter(url string, onlyLeaf bool) string {
+func cert_getter(url string, onlyLeaf bool) []byte {
 
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
@@ -41,7 +41,7 @@ func cert_getter(url string, onlyLeaf bool) string {
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return "error"
+		return nil
 	}
 	defer resp.Body.Close()
 
@@ -84,8 +84,8 @@ func cert_getter(url string, onlyLeaf bool) string {
 	sslInfoJSON, err := json.Marshal(sslInfo)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return "error"
+		return nil
 	}
 
-	return string(sslInfoJSON)
+	return sslInfoJSON
 }
