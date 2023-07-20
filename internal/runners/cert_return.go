@@ -1,10 +1,5 @@
 package runners
 
-import (
-	"encoding/json"
-	"os"
-)
-
 type DomainSSLInfo struct {
 	Domain string
 	SSL    SSLInfo
@@ -14,7 +9,7 @@ type SSLInfoArray struct {
 	DomainsSSLs []DomainSSLInfo
 }
 
-func CreateSSLJSON(domainsArray []string) {
+func CertReturn(domainsArray []string) SSLInfoArray {
 	sslInfoArray := SSLInfoArray{}
 
 	for _, domain := range domainsArray {
@@ -23,6 +18,5 @@ func CreateSSLJSON(domainsArray []string) {
 		sslInfoArray.DomainsSSLs = append(sslInfoArray.DomainsSSLs, domainSSLInfo)
 	}
 
-	file, _ := json.MarshalIndent(sslInfoArray, "", " ")
-	_ = os.WriteFile("UserSSLs/ssls.json", file, 0644)
+	return sslInfoArray
 }
