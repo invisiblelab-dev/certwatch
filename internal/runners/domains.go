@@ -14,5 +14,5 @@ func RunAddDomainCommand(opts certwatch.AddDomainOptions) {
 		return
 	}
 
-	fmt.Println("domain", opts.Domain, opts.DaysBefore)
+	AddDomain(opts.Domain, int(opts.DaysBefore))
 }
