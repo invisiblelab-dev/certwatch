@@ -3,9 +3,13 @@ package runners
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 type SSLInfo struct {
@@ -25,7 +29,7 @@ type CertificateInfo struct {
 	PublicKeyAlgorithm string
 }
 
-func CertGetter(url string, onlyLeaf bool) SSLInfo {
+func Certificate(url string, roots bool) SSLInfo {
 
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
@@ -52,16 +56,15 @@ func CertGetter(url string, onlyLeaf bool) SSLInfo {
 	}
 
 	// Retrieve information about the peer certificates
-	if onlyLeaf {
-		cert := resp.TLS.PeerCertificates[0]
-		peerCertificate := peerCertificate(cert)
-		sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
-
-	} else {
+	if roots {
 		for _, cert := range resp.TLS.PeerCertificates {
 			peerCertificate := peerCertificate(cert)
 			sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
 		}
+	} else {
+		cert := resp.TLS.PeerCertificates[0]
+		peerCertificate := peerCertificate(cert)
+		sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
 	}
 
 	return sslInfo
@@ -88,12 +91,13 @@ type SSLInfoArray struct {
 	DomainsSSLs []DomainSSLInfo
 }
 
-func CertArrayGetter(domainsArray []string) SSLInfoArray {
+func GetCertificates() SSLInfoArray {
+	domainsArray := ReadDomains()
 	sslInfoArray := SSLInfoArray{}
-
-	for _, domain := range domainsArray {
-		certificate := CertGetter(domain, true)
-		domainSSLInfo := DomainSSLInfo{Domain: domain, SSL: certificate}
+	roots := domainsArray.Roots
+	for _, domain := range domainsArray.Domains {
+		certificate := Certificate(domain.Name, roots)
+		domainSSLInfo := DomainSSLInfo{Domain: domain.Name, SSL: certificate}
 		sslInfoArray.DomainsSSLs = append(sslInfoArray.DomainsSSLs, domainSSLInfo)
 	}
 
@@ -109,7 +113,7 @@ type DomainsDeadlines struct {
 	Deadlines []DomainDeadline
 }
 
-func CalculateDeadline(certificates SSLInfoArray) DomainsDeadlines {
+func CalculateDaysToDeadline(certificates SSLInfoArray) DomainsDeadlines {
 	domainsDeadlines := DomainsDeadlines{}
 	for i := 0; i < len(certificates.DomainsSSLs); i++ {
 		timeHours := time.Until(certificates.DomainsSSLs[i].SSL.PeerCertificates[0].NotAfter)
@@ -118,4 +122,61 @@ func CalculateDeadline(certificates SSLInfoArray) DomainsDeadlines {
 		domainsDeadlines.Deadlines = append(domainsDeadlines.Deadlines, deadline)
 	}
 	return domainsDeadlines
+}
+
+type Domain struct {
+	Name             string `yaml:"name"`
+	NotificationDays int    `yaml:"days"`
+}
+
+type DomainsArray struct {
+	Domains       []Domain `yml:"domains"`
+	Roots         bool     `yml:"roots"`
+	Notifications struct {
+		Email struct {
+			Address string `yml:"address"`
+		} `yml:"email"`
+	} `yml:"notifications"`
+}
+
+func AddDomain(domain string, daysToNotify int) error {
+	domains := ReadDomains()
+	newDomain := Domain{Name: domain, NotificationDays: daysToNotify}
+
+	for _, listedDomain := range domains.Domains {
+		if listedDomain.Name == domain {
+			return errors.New("Domain already added")
+		} else {
+			continue
+		}
+	}
+
+	domains.Domains = append(domains.Domains, newDomain)
+
+	marshalData, err := yaml.Marshal(&domains)
+	if err != nil {
+		fmt.Println("not marshalling file, error: ", err)
+		return err
+	}
+
+	err = os.WriteFile("certwatch.yaml", marshalData, 0644)
+	if err != nil {
+		fmt.Println("not writing file, error: ", err)
+		return err
+	}
+	return nil
+}
+
+func ReadDomains() DomainsArray {
+	data, err := os.ReadFile("certwatch.yaml")
+	if err != nil {
+		fmt.Println("File reading error: ", err)
+	}
+
+	var domains DomainsArray
+	err = yaml.Unmarshal(data, &domains)
+	if err != nil {
+		fmt.Println("File parsing error: ", err)
+	}
+	return domains
 }
