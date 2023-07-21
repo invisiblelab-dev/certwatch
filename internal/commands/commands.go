@@ -1,13 +1,14 @@
 package commands
 
 import (
-	"github.com/spf13/viper"
+	"github.com/spf13/cobra"
 )
 
-func Parse() {
-	viper.SetConfigName("certwatch")
-	viper.SetConfigType("yml")
-	viper.AddConfigPath(".")
+func Parse() *cobra.Command {
+	rootCmd := &cobra.Command{Use: "certwatch"}
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
-	viper.ReadInConfig()
+	rootCmd.AddCommand(newAddDomainCommand())
+
+	return rootCmd
 }
