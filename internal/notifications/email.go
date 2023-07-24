@@ -1,7 +1,6 @@
 package notifications
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/smtp"
@@ -40,22 +39,33 @@ func sendEmail(subject string, config runners.ConfigFile) (bool, error) {
 	return true, nil
 }
 
-func EmailNotification() error {
-	certificates := runners.GetCertificates()
-	deadlines := runners.CalculateDaysToDeadline(certificates)
-	domains := runners.ReadYaml()
-	for i, domain := range deadlines.Deadlines {
-		if domain.Domain != domains.Domains[i].Name {
-			return errors.New("domains don't match")
-		}
+func CheckAndNotify() error {
+	message, err := composeMessage()
+	if err != nil {
+		return err
+	}
 
-		if domain.DaysTillDeadline <= float64(domains.Domains[i].NotificationDays) {
-			subject := domain.Domain + " certificate expires in " + fmt.Sprintf("%f", domain.DaysTillDeadline) + " days."
-			sendEmail(subject, domains)
-			fmt.Println("Email sent for domain " + domain.Domain)
+	_, err = sendEmail(message, runners.ReadYaml())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func composeMessage() (string, error) {
+	certificates := runners.GetCertificates()
+	deadlines, err := runners.CalculateDaysToDeadline(certificates)
+	if err != nil {
+		return "", err
+	}
+
+	var subject string
+	for i := 0; i < len(deadlines.Deadlines); i++ {
+		if deadlines.Deadlines[i].OnDeadline {
+			subject = subject + "\n\n" + deadlines.Deadlines[i].Domain + "certificate expires in " + fmt.Sprintf("%f", deadlines.Deadlines[i].DaysTillDeadline) + " days."
 		} else {
 			continue
 		}
 	}
-	return nil
+	return subject, nil
 }

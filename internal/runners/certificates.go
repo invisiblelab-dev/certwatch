@@ -30,7 +30,6 @@ type CertificateInfo struct {
 }
 
 func Certificate(url string, roots bool) SSLInfo {
-
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -107,21 +106,32 @@ func GetCertificates() SSLInfoArray {
 type DomainDeadline struct {
 	Domain           string
 	DaysTillDeadline float64
+	OnDeadline       bool
 }
 
 type DomainsDeadlines struct {
 	Deadlines []DomainDeadline
 }
 
-func CalculateDaysToDeadline(certificates SSLInfoArray) DomainsDeadlines {
+func CalculateDaysToDeadline(certificates SSLInfoArray) (DomainsDeadlines, error) {
 	domainsDeadlines := DomainsDeadlines{}
+	file := ReadYaml()
 	for i := 0; i < len(certificates.DomainsSSLs); i++ {
 		timeHours := time.Until(certificates.DomainsSSLs[i].SSL.PeerCertificates[0].NotAfter)
 		timeDays := timeHours.Hours() / 24
-		deadline := DomainDeadline{Domain: certificates.DomainsSSLs[i].Domain, DaysTillDeadline: timeDays}
+		var onDeadline bool
+		if file.Domains[i].Name != certificates.DomainsSSLs[i].Domain {
+			return domainsDeadlines, errors.New("domains don't match")
+		}
+		if timeDays <= float64(file.Domains[i].NotificationDays) {
+			onDeadline = true
+		} else {
+			onDeadline = false
+		}
+		deadline := DomainDeadline{Domain: certificates.DomainsSSLs[i].Domain, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
 		domainsDeadlines.Deadlines = append(domainsDeadlines.Deadlines, deadline)
 	}
-	return domainsDeadlines
+	return domainsDeadlines, nil
 }
 
 type Domain struct {
