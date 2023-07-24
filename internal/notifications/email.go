@@ -9,26 +9,26 @@ import (
 	"github.com/invisiblelab-dev/certwatch/internal/runners"
 )
 
-func sendEmail(subject string) (bool, error) {
+func sendEmail(subject string, config runners.ConfigFile) (bool, error) {
 	// Mailtrap account config
-	username := "411d906e45a1ed"
+
+	username := config.Notifications.Email.Mailtrap.Username
+	password := config.Notifications.Email.Mailtrap.Password
 	smtpHost := "sandbox.smtp.mailtrap.io" // TEST email mailtrap host
-	password := "72cb4b151d2841"
 
 	auth := smtp.PlainAuth("", username, password, smtpHost)
 
 	// Message data
 
-	from := "john.doe@your.domain"
-
-	to := []string{"kate.doe@example.com"}
+	from := config.Notifications.Email.From
+	to := []string{config.Notifications.Email.To}
 	email := "To: " + to[0] + "\n\n" +
 		"From: " + from + "\n\n" +
 		"Subject: " + subject
 
 	message := []byte(email)
-	// Connect to the server and send message
 
+	// Connect to the server and send message
 	smtpUrl := smtpHost + ":465"
 
 	err := smtp.SendMail(smtpUrl, auth, from, to, message)
@@ -43,15 +43,15 @@ func sendEmail(subject string) (bool, error) {
 func EmailNotification() error {
 	certificates := runners.GetCertificates()
 	deadlines := runners.CalculateDaysToDeadline(certificates)
-	domains := runners.ReadDomains().Domains
+	domains := runners.ReadYaml()
 	for i, domain := range deadlines.Deadlines {
-		if domain.Domain != domains[i].Name {
+		if domain.Domain != domains.Domains[i].Name {
 			return errors.New("domains don't match")
 		}
 
-		if domain.DaysTillDeadline <= float64(domains[i].NotificationDays) {
+		if domain.DaysTillDeadline <= float64(domains.Domains[i].NotificationDays) {
 			subject := domain.Domain + " certificate expires in " + fmt.Sprintf("%f", domain.DaysTillDeadline) + " days."
-			sendEmail(subject)
+			sendEmail(subject, domains)
 			fmt.Println("Email sent for domain " + domain.Domain)
 		} else {
 			continue

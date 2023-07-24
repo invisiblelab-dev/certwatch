@@ -92,7 +92,7 @@ type SSLInfoArray struct {
 }
 
 func GetCertificates() SSLInfoArray {
-	domainsArray := ReadDomains()
+	domainsArray := ReadYaml()
 	sslInfoArray := SSLInfoArray{}
 	roots := domainsArray.Roots
 	for _, domain := range domainsArray.Domains {
@@ -129,18 +129,26 @@ type Domain struct {
 	NotificationDays int    `yaml:"days"`
 }
 
-type DomainsArray struct {
+type ConfigFile struct {
 	Domains       []Domain `yml:"domains"`
 	Roots         bool     `yml:"roots"`
 	Notifications struct {
-		Email struct {
-			Address string `yml:"address"`
-		} `yml:"email"`
+		Email Email `yml:"email"`
 	} `yml:"notifications"`
 }
 
+type Email struct {
+	Mailtrap struct {
+		Username string `yml:"username"`
+		Password string `yml:"password"`
+		SmtpHost string `yml:"smtpHost"`
+	} `yml:"mailtrap"`
+	From string `yml:"from"`
+	To   string `yml:"to"`
+}
+
 func AddDomain(domain string, daysToNotify int) error {
-	domains := ReadDomains()
+	domains := ReadYaml()
 	newDomain := Domain{Name: domain, NotificationDays: daysToNotify}
 
 	for _, listedDomain := range domains.Domains {
@@ -167,13 +175,13 @@ func AddDomain(domain string, daysToNotify int) error {
 	return nil
 }
 
-func ReadDomains() DomainsArray {
+func ReadYaml() ConfigFile {
 	data, err := os.ReadFile("certwatch.yaml")
 	if err != nil {
 		fmt.Println("File reading error: ", err)
 	}
 
-	var domains DomainsArray
+	var domains ConfigFile
 	err = yaml.Unmarshal(data, &domains)
 	if err != nil {
 		fmt.Println("File parsing error: ", err)
