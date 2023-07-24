@@ -34,3 +34,9 @@ type Domain struct {
 	Name             string `yaml:"name"`
 	NotificationDays int    `yaml:"days"`
 }
+
+type DomainQuery struct {
+	Issuer    string
+	LastCheck time.Time
+	NotAfter  time.Time
+}

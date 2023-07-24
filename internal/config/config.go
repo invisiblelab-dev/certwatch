@@ -30,3 +30,34 @@ func WriteYaml(data []byte) error {
 	}
 	return nil
 }
+
+func ReadQueries() (map[string]certwatch.DomainQuery, error) {
+	data, err := os.ReadFile("queries.yaml")
+	if err != nil {
+		fmt.Println("File reading error: ", err)
+		return nil, err
+	}
+
+	queries := make(map[string]certwatch.DomainQuery)
+
+	err = yaml.Unmarshal(data, &queries)
+	if err != nil {
+		fmt.Println("File unmarshall error: ", err)
+		return nil, err
+	}
+
+	return queries, nil
+}
+
+func WriteQueries(data map[string]certwatch.DomainQuery) error {
+	marshalData, err := yaml.Marshal(&data)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile("queries.yaml", marshalData, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}

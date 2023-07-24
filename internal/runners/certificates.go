@@ -3,7 +3,6 @@ package runners
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -66,35 +65,47 @@ func peerCertificate(cert *x509.Certificate) certwatch.CertificateInfo {
 	return certificate
 }
 
-func GetCertificates() []certwatch.DomainSSLInfo {
+func GetCertificates() map[string]certwatch.DomainQuery {
+	// Read config file
 	domains := config.ReadYaml()
-	sslInfos := []certwatch.DomainSSLInfo{}
 	roots := domains.Roots
-	for _, domain := range domains.Domains {
-		certificate := Certificate(domain.Name, roots)
-		domainSSLInfo := certwatch.DomainSSLInfo{Domain: domain.Name, SSL: certificate}
-		sslInfos = append(sslInfos, domainSSLInfo)
+
+	// Read past queries files
+	queries, err := config.ReadQueries()
+	if err != nil {
+		fmt.Println("error reading queries: ", err)
 	}
 
-	return sslInfos
+	for _, domain := range domains.Domains {
+		// Check if already queried or if query was done in more than deadline "days"
+		if (queries[domain.Name].LastCheck == time.Time{}) || (int(time.Until(queries[domain.Name].LastCheck).Hours()) >= domain.NotificationDays) {
+			certificate := Certificate(domain.Name, roots)
+			queries[domain.Name] = certwatch.DomainQuery{Issuer: certificate.PeerCertificates[0].Issuer, LastCheck: time.Now(), NotAfter: certificate.PeerCertificates[0].NotAfter}
+		} else {
+			continue
+		}
+	}
+
+	err = config.WriteQueries(queries)
+	if err != nil {
+		fmt.Println("error writing query file err:", err)
+	}
+	return queries
 }
 
-func CalculateDaysToDeadline(certificates []certwatch.DomainSSLInfo) ([]certwatch.DomainDeadline, error) {
+func CalculateDaysToDeadline(certificates map[string]certwatch.DomainQuery) ([]certwatch.DomainDeadline, error) {
 	domainsDeadlines := []certwatch.DomainDeadline{}
 	file := config.ReadYaml()
-	for i := 0; i < len(certificates); i++ {
-		timeHours := time.Until(certificates[i].SSL.PeerCertificates[0].NotAfter)
+	for i := 0; i < len(file.Domains); i++ {
+		timeHours := time.Until(certificates[file.Domains[i].Name].NotAfter)
 		timeDays := timeHours.Hours() / 24
 		var onDeadline bool
-		if file.Domains[i].Name != certificates[i].Domain {
-			return domainsDeadlines, errors.New("domains don't match")
-		}
 		if timeDays <= float64(file.Domains[i].NotificationDays) {
 			onDeadline = true
 		} else {
 			onDeadline = false
 		}
-		deadline := certwatch.DomainDeadline{Domain: certificates[i].Domain, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
+		deadline := certwatch.DomainDeadline{Domain: file.Domains[i].Name, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
 		domainsDeadlines = append(domainsDeadlines, deadline)
 	}
 	return domainsDeadlines, nil
