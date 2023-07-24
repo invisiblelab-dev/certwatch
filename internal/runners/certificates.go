@@ -6,30 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
-	"gopkg.in/yaml.v3"
+	certwatch "github.com/invisiblelab-dev/certwatch/internal"
+	"github.com/invisiblelab-dev/certwatch/internal/config"
+
+	"github.com/invisiblelab-dev/certwatch/internal/notifications"
 )
 
-type SSLInfo struct {
-	Version           uint16
-	HandshakeComplete bool
-	DidResume         bool
-	CipherSuite       uint16
-	PeerCertificates  []CertificateInfo
-}
-
-type CertificateInfo struct {
-	Subject            string
-	Issuer             string
-	NotBefore          time.Time
-	NotAfter           time.Time
-	SignatureAlgorithm string
-	PublicKeyAlgorithm string
-}
-
-func Certificate(url string, roots bool) SSLInfo {
+func Certificate(url string, roots bool) certwatch.SSLInfo {
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -42,12 +27,12 @@ func Certificate(url string, roots bool) SSLInfo {
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return SSLInfo{}
+		return certwatch.SSLInfo{}
 	}
 	defer resp.Body.Close()
 
 	// Create a new instance of SSLInfo
-	sslInfo := SSLInfo{
+	sslInfo := certwatch.SSLInfo{
 		Version:           resp.TLS.Version,
 		HandshakeComplete: resp.TLS.HandshakeComplete,
 		DidResume:         resp.TLS.DidResume,
@@ -69,8 +54,8 @@ func Certificate(url string, roots bool) SSLInfo {
 	return sslInfo
 }
 
-func peerCertificate(cert *x509.Certificate) CertificateInfo {
-	certificate := CertificateInfo{
+func peerCertificate(cert *x509.Certificate) certwatch.CertificateInfo {
+	certificate := certwatch.CertificateInfo{
 		Subject:            cert.Subject.String(),
 		Issuer:             cert.Issuer.String(),
 		NotBefore:          cert.NotBefore,
@@ -81,46 +66,27 @@ func peerCertificate(cert *x509.Certificate) CertificateInfo {
 	return certificate
 }
 
-type DomainSSLInfo struct {
-	Domain string
-	SSL    SSLInfo
-}
-
-type SSLInfoArray struct {
-	DomainsSSLs []DomainSSLInfo
-}
-
-func GetCertificates() SSLInfoArray {
-	domainsArray := ReadYaml()
-	sslInfoArray := SSLInfoArray{}
-	roots := domainsArray.Roots
-	for _, domain := range domainsArray.Domains {
+func GetCertificates() []certwatch.DomainSSLInfo {
+	domains := config.ReadYaml()
+	sslInfos := []certwatch.DomainSSLInfo{}
+	roots := domains.Roots
+	for _, domain := range domains.Domains {
 		certificate := Certificate(domain.Name, roots)
-		domainSSLInfo := DomainSSLInfo{Domain: domain.Name, SSL: certificate}
-		sslInfoArray.DomainsSSLs = append(sslInfoArray.DomainsSSLs, domainSSLInfo)
+		domainSSLInfo := certwatch.DomainSSLInfo{Domain: domain.Name, SSL: certificate}
+		sslInfos = append(sslInfos, domainSSLInfo)
 	}
 
-	return sslInfoArray
+	return sslInfos
 }
 
-type DomainDeadline struct {
-	Domain           string
-	DaysTillDeadline float64
-	OnDeadline       bool
-}
-
-type DomainsDeadlines struct {
-	Deadlines []DomainDeadline
-}
-
-func CalculateDaysToDeadline(certificates SSLInfoArray) (DomainsDeadlines, error) {
-	domainsDeadlines := DomainsDeadlines{}
-	file := ReadYaml()
-	for i := 0; i < len(certificates.DomainsSSLs); i++ {
-		timeHours := time.Until(certificates.DomainsSSLs[i].SSL.PeerCertificates[0].NotAfter)
+func CalculateDaysToDeadline(certificates []certwatch.DomainSSLInfo) ([]certwatch.DomainDeadline, error) {
+	domainsDeadlines := []certwatch.DomainDeadline{}
+	file := config.ReadYaml()
+	for i := 0; i < len(certificates); i++ {
+		timeHours := time.Until(certificates[i].SSL.PeerCertificates[0].NotAfter)
 		timeDays := timeHours.Hours() / 24
 		var onDeadline bool
-		if file.Domains[i].Name != certificates.DomainsSSLs[i].Domain {
+		if file.Domains[i].Name != certificates[i].Domain {
 			return domainsDeadlines, errors.New("domains don't match")
 		}
 		if timeDays <= float64(file.Domains[i].NotificationDays) {
@@ -128,73 +94,28 @@ func CalculateDaysToDeadline(certificates SSLInfoArray) (DomainsDeadlines, error
 		} else {
 			onDeadline = false
 		}
-		deadline := DomainDeadline{Domain: certificates.DomainsSSLs[i].Domain, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
-		domainsDeadlines.Deadlines = append(domainsDeadlines.Deadlines, deadline)
+		deadline := certwatch.DomainDeadline{Domain: certificates[i].Domain, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
+		domainsDeadlines = append(domainsDeadlines, deadline)
 	}
 	return domainsDeadlines, nil
 }
 
-type Domain struct {
-	Name             string `yaml:"name"`
-	NotificationDays int    `yaml:"days"`
+func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
+	fmt.Println("domains", opts.Domains)
+	panic("not implemented")
 }
 
-type ConfigFile struct {
-	Domains       []Domain `yml:"domains"`
-	Roots         bool     `yml:"roots"`
-	Notifications struct {
-		Email Email `yml:"email"`
-	} `yml:"notifications"`
-}
-
-type Email struct {
-	Mailtrap struct {
-		Username string `yml:"username"`
-		Password string `yml:"password"`
-		SmtpHost string `yml:"smtpHost"`
-	} `yml:"mailtrap"`
-	From string `yml:"from"`
-	To   string `yml:"to"`
-}
-
-func AddDomain(domain string, daysToNotify int) error {
-	domains := ReadYaml()
-	newDomain := Domain{Name: domain, NotificationDays: daysToNotify}
-
-	for _, listedDomain := range domains.Domains {
-		if listedDomain.Name == domain {
-			return errors.New("Domain already added")
-		} else {
-			continue
-		}
-	}
-
-	domains.Domains = append(domains.Domains, newDomain)
-
-	marshalData, err := yaml.Marshal(&domains)
+func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) {
+	certificates := GetCertificates()
+	domainDeadlines, err := CalculateDaysToDeadline(certificates)
 	if err != nil {
-		fmt.Println("not marshalling file, error: ", err)
-		return err
+		return
 	}
 
-	err = os.WriteFile("certwatch.yaml", marshalData, 0644)
+	message, err := notifications.ComposeMessage(domainDeadlines)
 	if err != nil {
-		fmt.Println("not writing file, error: ", err)
-		return err
-	}
-	return nil
-}
-
-func ReadYaml() ConfigFile {
-	data, err := os.ReadFile("certwatch.yaml")
-	if err != nil {
-		fmt.Println("File reading error: ", err)
+		return
 	}
 
-	var domains ConfigFile
-	err = yaml.Unmarshal(data, &domains)
-	if err != nil {
-		fmt.Println("File parsing error: ", err)
-	}
-	return domains
+	notifications.SendEmail(message, config.ReadYaml())
 }

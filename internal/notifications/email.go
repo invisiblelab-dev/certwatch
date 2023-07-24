@@ -1,14 +1,13 @@
 package notifications
 
 import (
-	"fmt"
 	"log"
 	"net/smtp"
 
-	"github.com/invisiblelab-dev/certwatch/internal/runners"
+	certwatch "github.com/invisiblelab-dev/certwatch/internal"
 )
 
-func sendEmail(subject string, config runners.ConfigFile) (bool, error) {
+func SendEmail(subject string, config certwatch.ConfigFile) (bool, error) {
 	// Mailtrap account config
 
 	username := config.Notifications.Email.Mailtrap.Username
@@ -37,35 +36,4 @@ func sendEmail(subject string, config runners.ConfigFile) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-func CheckAndNotify() error {
-	message, err := composeMessage()
-	if err != nil {
-		return err
-	}
-
-	_, err = sendEmail(message, runners.ReadYaml())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func composeMessage() (string, error) {
-	certificates := runners.GetCertificates()
-	deadlines, err := runners.CalculateDaysToDeadline(certificates)
-	if err != nil {
-		return "", err
-	}
-
-	var subject string
-	for i := 0; i < len(deadlines.Deadlines); i++ {
-		if deadlines.Deadlines[i].OnDeadline {
-			subject = subject + "\n\n" + deadlines.Deadlines[i].Domain + "certificate expires in " + fmt.Sprintf("%f", deadlines.Deadlines[i].DaysTillDeadline) + " days."
-		} else {
-			continue
-		}
-	}
-	return subject, nil
 }

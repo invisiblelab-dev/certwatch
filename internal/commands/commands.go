@@ -9,6 +9,8 @@ func Parse() *cobra.Command {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	rootCmd.AddCommand(newAddDomainCommand())
+	rootCmd.AddCommand(newCheckAllCertificatesCommand())
+	rootCmd.AddCommand(newCheckCertificatesCommand())
 
 	return rootCmd
 }
