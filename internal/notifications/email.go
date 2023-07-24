@@ -12,7 +12,7 @@ func SendEmail(subject string, config certwatch.ConfigFile) (bool, error) {
 
 	username := config.Notifications.Email.Mailtrap.Username
 	password := config.Notifications.Email.Mailtrap.Password
-	smtpHost := "sandbox.smtp.mailtrap.io" // TEST email mailtrap host
+	smtpHost := config.Notifications.Email.Mailtrap.SmtpHost // TEST email mailtrap host
 
 	auth := smtp.PlainAuth("", username, password, smtpHost)
 
