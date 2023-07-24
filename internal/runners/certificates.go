@@ -3,30 +3,18 @@ package runners
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
+
+	certwatch "github.com/invisiblelab-dev/certwatch/internal"
+	"github.com/invisiblelab-dev/certwatch/internal/config"
+
+	"github.com/invisiblelab-dev/certwatch/internal/notifications"
 )
 
-type SSLInfo struct {
-	Version           uint16
-	HandshakeComplete bool
-	DidResume         bool
-	CipherSuite       uint16
-	PeerCertificates  []CertificateInfo
-}
-
-type CertificateInfo struct {
-	Subject            string
-	Issuer             string
-	NotBefore          time.Time
-	NotAfter           time.Time
-	SignatureAlgorithm string
-	PublicKeyAlgorithm string
-}
-
-func CertGetter(url string, onlyLeaf bool) SSLInfo {
-
+func Certificate(url string, roots bool) certwatch.SSLInfo {
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -39,12 +27,12 @@ func CertGetter(url string, onlyLeaf bool) SSLInfo {
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return SSLInfo{}
+		return certwatch.SSLInfo{}
 	}
 	defer resp.Body.Close()
 
 	// Create a new instance of SSLInfo
-	sslInfo := SSLInfo{
+	sslInfo := certwatch.SSLInfo{
 		Version:           resp.TLS.Version,
 		HandshakeComplete: resp.TLS.HandshakeComplete,
 		DidResume:         resp.TLS.DidResume,
@@ -52,23 +40,22 @@ func CertGetter(url string, onlyLeaf bool) SSLInfo {
 	}
 
 	// Retrieve information about the peer certificates
-	if onlyLeaf {
-		cert := resp.TLS.PeerCertificates[0]
-		peerCertificate := peerCertificate(cert)
-		sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
-
-	} else {
+	if roots {
 		for _, cert := range resp.TLS.PeerCertificates {
 			peerCertificate := peerCertificate(cert)
 			sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
 		}
+	} else {
+		cert := resp.TLS.PeerCertificates[0]
+		peerCertificate := peerCertificate(cert)
+		sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
 	}
 
 	return sslInfo
 }
 
-func peerCertificate(cert *x509.Certificate) CertificateInfo {
-	certificate := CertificateInfo{
+func peerCertificate(cert *x509.Certificate) certwatch.CertificateInfo {
+	certificate := certwatch.CertificateInfo{
 		Subject:            cert.Subject.String(),
 		Issuer:             cert.Issuer.String(),
 		NotBefore:          cert.NotBefore,
@@ -79,43 +66,56 @@ func peerCertificate(cert *x509.Certificate) CertificateInfo {
 	return certificate
 }
 
-type DomainSSLInfo struct {
-	Domain string
-	SSL    SSLInfo
-}
-
-type SSLInfoArray struct {
-	DomainsSSLs []DomainSSLInfo
-}
-
-func CertArrayGetter(domainsArray []string) SSLInfoArray {
-	sslInfoArray := SSLInfoArray{}
-
-	for _, domain := range domainsArray {
-		certificate := CertGetter(domain, true)
-		domainSSLInfo := DomainSSLInfo{Domain: domain, SSL: certificate}
-		sslInfoArray.DomainsSSLs = append(sslInfoArray.DomainsSSLs, domainSSLInfo)
+func GetCertificates() []certwatch.DomainSSLInfo {
+	domains := config.ReadYaml()
+	sslInfos := []certwatch.DomainSSLInfo{}
+	roots := domains.Roots
+	for _, domain := range domains.Domains {
+		certificate := Certificate(domain.Name, roots)
+		domainSSLInfo := certwatch.DomainSSLInfo{Domain: domain.Name, SSL: certificate}
+		sslInfos = append(sslInfos, domainSSLInfo)
 	}
 
-	return sslInfoArray
+	return sslInfos
 }
 
-type DomainDeadline struct {
-	Domain           string
-	DaysTillDeadline float64
-}
-
-type DomainsDeadlines struct {
-	Deadlines []DomainDeadline
-}
-
-func CalculateDeadline(certificates SSLInfoArray) DomainsDeadlines {
-	domainsDeadlines := DomainsDeadlines{}
-	for i := 0; i < len(certificates.DomainsSSLs); i++ {
-		timeHours := time.Until(certificates.DomainsSSLs[i].SSL.PeerCertificates[0].NotAfter)
+func CalculateDaysToDeadline(certificates []certwatch.DomainSSLInfo) ([]certwatch.DomainDeadline, error) {
+	domainsDeadlines := []certwatch.DomainDeadline{}
+	file := config.ReadYaml()
+	for i := 0; i < len(certificates); i++ {
+		timeHours := time.Until(certificates[i].SSL.PeerCertificates[0].NotAfter)
 		timeDays := timeHours.Hours() / 24
-		deadline := DomainDeadline{Domain: certificates.DomainsSSLs[i].Domain, DaysTillDeadline: timeDays}
-		domainsDeadlines.Deadlines = append(domainsDeadlines.Deadlines, deadline)
+		var onDeadline bool
+		if file.Domains[i].Name != certificates[i].Domain {
+			return domainsDeadlines, errors.New("domains don't match")
+		}
+		if timeDays <= float64(file.Domains[i].NotificationDays) {
+			onDeadline = true
+		} else {
+			onDeadline = false
+		}
+		deadline := certwatch.DomainDeadline{Domain: certificates[i].Domain, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
+		domainsDeadlines = append(domainsDeadlines, deadline)
 	}
-	return domainsDeadlines
+	return domainsDeadlines, nil
+}
+
+func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
+	fmt.Println("domains", opts.Domains)
+	panic("not implemented")
+}
+
+func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) {
+	certificates := GetCertificates()
+	domainDeadlines, err := CalculateDaysToDeadline(certificates)
+	if err != nil {
+		return
+	}
+
+	message, err := notifications.ComposeMessage(domainDeadlines)
+	if err != nil {
+		return
+	}
+
+	notifications.SendEmail(message, config.ReadYaml())
 }

@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
-	commands.Parse()
+	c := commands.Parse()
+	_ = c.Execute()
 }
