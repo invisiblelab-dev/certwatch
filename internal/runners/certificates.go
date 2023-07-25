@@ -13,7 +13,7 @@ import (
 	"github.com/invisiblelab-dev/certwatch/internal/notifications"
 )
 
-func Certificate(url string, roots bool) certwatch.SSLInfo {
+func Certificate(url string) certwatch.SSLInfo {
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -39,16 +39,9 @@ func Certificate(url string, roots bool) certwatch.SSLInfo {
 	}
 
 	// Retrieve information about the peer certificates
-	if roots {
-		for _, cert := range resp.TLS.PeerCertificates {
-			peerCertificate := peerCertificate(cert)
-			sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
-		}
-	} else {
-		cert := resp.TLS.PeerCertificates[0]
-		peerCertificate := peerCertificate(cert)
-		sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
-	}
+	cert := resp.TLS.PeerCertificates[0]
+	peerCertificate := peerCertificate(cert)
+	sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
 
 	return sslInfo
 }
@@ -68,7 +61,6 @@ func peerCertificate(cert *x509.Certificate) certwatch.CertificateInfo {
 func GetCertificates() map[string]certwatch.DomainQuery {
 	// Read config file
 	domains := config.ReadYaml()
-	roots := domains.Roots
 
 	// Read past queries files
 	queries, err := config.ReadQueries()
@@ -79,7 +71,7 @@ func GetCertificates() map[string]certwatch.DomainQuery {
 	for _, domain := range domains.Domains {
 		// Check if already queried or if query was done in more than deadline "days"
 		if (queries[domain.Name].LastCheck == time.Time{}) || (int(time.Until(queries[domain.Name].LastCheck).Hours()) >= domain.NotificationDays) {
-			certificate := Certificate(domain.Name, roots)
+			certificate := Certificate(domain.Name)
 			queries[domain.Name] = certwatch.DomainQuery{Issuer: certificate.PeerCertificates[0].Issuer, LastCheck: time.Now(), NotAfter: certificate.PeerCertificates[0].NotAfter}
 		} else {
 			continue
