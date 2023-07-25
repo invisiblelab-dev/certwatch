@@ -8,18 +8,20 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func ReadYaml() certwatch.ConfigFile {
+func ReadYaml() (certwatch.ConfigFile, error) {
 	data, err := os.ReadFile("certwatch.yaml")
 	if err != nil {
 		fmt.Println("File reading error: ", err)
+		return certwatch.ConfigFile{}, err
 	}
 
 	var domains certwatch.ConfigFile
 	err = yaml.Unmarshal(data, &domains)
 	if err != nil {
 		fmt.Println("File parsing error: ", err)
+		return certwatch.ConfigFile{}, err
 	}
-	return domains
+	return domains, nil
 }
 
 func WriteYaml(data []byte) error {
