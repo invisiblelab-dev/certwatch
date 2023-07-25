@@ -1,7 +1,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 
 	certwatch "github.com/invisiblelab-dev/certwatch/internal"
@@ -34,11 +36,16 @@ func WriteYaml(data []byte) error {
 }
 
 func ReadQueries() (map[string]certwatch.DomainQuery, error) {
+	queries := make(map[string]certwatch.DomainQuery)
+
 	fileName := "queries.yaml"
 	data, err := os.ReadFile(fileName)
-	certwatch.MissingFile(fileName, data, err)
-
-	queries := make(map[string]certwatch.DomainQuery)
+	if errors.Is(err, fs.ErrNotExist) {
+		return queries, nil
+	}
+	if err != nil {
+		return nil, err
+	}
 
 	err = yaml.Unmarshal(data, &queries)
 	if err != nil {
