@@ -59,6 +59,7 @@ func GetCertificates() (map[string]certwatch.DomainQuery, error) {
 	if err != nil {
 		return nil, err
 	}
+	refresh := domains.Refresh
 
 	// Read past queries file
 	queries, err := config.ReadQueries()
@@ -68,8 +69,8 @@ func GetCertificates() (map[string]certwatch.DomainQuery, error) {
 	}
 
 	for _, domain := range domains.Domains {
-		// Check if already queried or if query was done in more than deadline "days"
-		if (queries[domain.Name].LastCheck == time.Time{}) || (int(time.Until(queries[domain.Name].LastCheck).Hours()) >= domain.NotificationDays) {
+		// Check if domain was not queried yet or if it was queried but in more than "refresh" seconds
+		if (queries[domain.Name].LastCheck == time.Time{}) || (int(time.Since(queries[domain.Name].LastCheck).Seconds()) >= refresh) {
 			certificate := Certificate(domain.Name)
 			queries[domain.Name] = certwatch.DomainQuery{Issuer: certificate.PeerCertificates[0].Issuer, LastCheck: time.Now(), NotAfter: certificate.PeerCertificates[0].NotAfter}
 		}
