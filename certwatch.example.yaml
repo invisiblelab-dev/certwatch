@@ -1,0 +1,14 @@
+domains:
+  - name: https://www.invisiblelab.dev/
+      days: 10
+  - name: <domain url>
+      days: <days to expire for email/slack notification>
+
+notifications:
+  email:
+    mailtrap:
+      username: <smtpUsername>
+      password: <smtpPassword>
+      smtphost: <smtpHost>
+    from: <notification email from address>
+    to: <notification email to address>
