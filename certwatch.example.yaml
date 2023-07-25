@@ -1,0 +1,14 @@
+domains:
+  - name: https://www.invisiblelab.dev/
+      days: 10
+  - name: <domain url>
+      days: <days to expire for email/slack notification>
+refresh: <limit of seconds since last query to get certificate info>
+notifications:
+  email:
+    username: <smtpUsername>
+    password: <smtpPassword>
+    smtphost: <smtpHost>
+    port: <smtpUrl port>
+    from: <notification email from address>
+    to: <notification email to address>

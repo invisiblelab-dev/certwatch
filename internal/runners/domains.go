@@ -11,7 +11,10 @@ import (
 )
 
 func AddDomain(domain string, daysToNotify int) error {
-	domains := config.ReadYaml()
+	domains, err := config.ReadYaml()
+	if err != nil {
+		return err
+	}
 	newDomain := certwatch.Domain{Name: domain, NotificationDays: daysToNotify}
 
 	for _, listedDomain := range domains.Domains {
@@ -32,11 +35,23 @@ func AddDomain(domain string, daysToNotify int) error {
 }
 
 func RunAddDomainCommand(opts certwatch.AddDomainOptions) {
-	_, err := url.ParseRequestURI(opts.Domain)
+	url, err := url.Parse(opts.Domain)
 	if err != nil {
-		fmt.Printf("failed to read url: %v\n", err)
+		fmt.Printf("failed to parse url: %v\n", err)
+		return
+	}
+	if url.Scheme != "https" {
+		fmt.Printf("url is not https: %v\n", opts.Domain)
+		return
+	}
+	if opts.DaysBefore <= 0 {
+		fmt.Printf("Days cant be <=0: %v\n", opts.DaysBefore)
 		return
 	}
 
-	AddDomain(opts.Domain, int(opts.DaysBefore))
+	err = AddDomain(opts.Domain, int(opts.DaysBefore))
+	if err != nil {
+		fmt.Printf("failed to add url: %v\n", err)
+		return
+	}
 }

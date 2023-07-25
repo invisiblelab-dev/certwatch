@@ -2,8 +2,8 @@ package certwatch
 
 type ConfigFile struct {
 	Domains       []Domain `yml:"domains"`
-	Roots         bool     `yml:"roots"`
+	Refresh       int      `yml:"refresh"`
 	Notifications struct {
-		Email Email `yml:"email"`
+		Email `yml:"email"`
 	} `yml:"notifications"`
 }
