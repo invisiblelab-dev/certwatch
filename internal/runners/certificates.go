@@ -2,7 +2,6 @@ package runners
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"net/http"
 	"time"
@@ -40,14 +39,7 @@ func Certificate(url string) certwatch.SSLInfo {
 
 	// Retrieve information about the peer certificates
 	cert := resp.TLS.PeerCertificates[0]
-	peerCertificate := peerCertificate(cert)
-	sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
-
-	return sslInfo
-}
-
-func peerCertificate(cert *x509.Certificate) certwatch.CertificateInfo {
-	certificate := certwatch.CertificateInfo{
+	peerCertificate := certwatch.CertificateInfo{
 		Subject:            cert.Subject.String(),
 		Issuer:             cert.Issuer.String(),
 		NotBefore:          cert.NotBefore,
@@ -55,7 +47,10 @@ func peerCertificate(cert *x509.Certificate) certwatch.CertificateInfo {
 		SignatureAlgorithm: cert.SignatureAlgorithm.String(),
 		PublicKeyAlgorithm: cert.PublicKeyAlgorithm.String(),
 	}
-	return certificate
+
+	sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
+
+	return sslInfo
 }
 
 func GetCertificates() map[string]certwatch.DomainQuery {
