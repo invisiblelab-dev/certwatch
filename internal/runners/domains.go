@@ -11,7 +11,10 @@ import (
 )
 
 func AddDomain(domain string, daysToNotify int) error {
-	domains := config.ReadYaml()
+	domains, err := config.ReadYaml()
+	if err != nil {
+		return err
+	}
 	newDomain := certwatch.Domain{Name: domain, NotificationDays: daysToNotify}
 
 	for _, listedDomain := range domains.Domains {

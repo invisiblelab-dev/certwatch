@@ -116,6 +116,7 @@ func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) 
 	if err != nil {
 		return
 	}
+
 	domainDeadlines, err := CalculateDaysToDeadline(certificates)
 	if err != nil {
 		return

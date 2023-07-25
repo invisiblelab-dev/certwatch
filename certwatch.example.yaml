@@ -9,5 +9,6 @@ notifications:
     username: <smtpUsername>
     password: <smtpPassword>
     smtphost: <smtpHost>
+    port: <smtpUrl port>
     from: <notification email from address>
     to: <notification email to address>

@@ -3,6 +3,7 @@ package notifications
 import (
 	"log"
 	"net/smtp"
+	"strconv"
 
 	certwatch "github.com/invisiblelab-dev/certwatch/internal"
 )
@@ -11,6 +12,7 @@ func SendEmail(subject string, config certwatch.ConfigFile) (bool, error) {
 	username := config.Notifications.Email.Username
 	password := config.Notifications.Email.Password
 	smtpHost := config.Notifications.Email.SmtpHost
+	port := config.Notifications.Email.Port
 
 	auth := smtp.PlainAuth("", username, password, smtpHost)
 
@@ -21,10 +23,8 @@ func SendEmail(subject string, config certwatch.ConfigFile) (bool, error) {
 		"Subject: " + subject
 
 	message := []byte(email)
-	smtpUrl := smtpHost + ":465"
-
+	smtpUrl := smtpHost + ":" + strconv.Itoa(port)
 	err := smtp.SendMail(smtpUrl, auth, from, to, message)
-
 	if err != nil {
 		log.Fatal(err)
 		return false, err
