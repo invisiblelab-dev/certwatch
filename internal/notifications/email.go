@@ -9,9 +9,9 @@ import (
 
 func SendEmail(subject string, config certwatch.ConfigFile) (bool, error) {
 	// Mailtrap account config
-	username := config.Notifications.Email.Mailtrap.Username
-	password := config.Notifications.Email.Mailtrap.Password
-	smtpHost := config.Notifications.Email.Mailtrap.SmtpHost // TEST email mailtrap host
+	username := config.Notifications.Email.Username
+	password := config.Notifications.Email.Password
+	smtpHost := config.Notifications.Email.SmtpHost // TEST email mailtrap host
 
 	auth := smtp.PlainAuth("", username, password, smtpHost)
 

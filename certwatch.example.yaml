@@ -6,9 +6,8 @@ domains:
 
 notifications:
   email:
-    mailtrap:
-      username: <smtpUsername>
-      password: <smtpPassword>
-      smtphost: <smtpHost>
+    username: <smtpUsername>
+    password: <smtpPassword>
+    smtphost: <smtpHost>
     from: <notification email from address>
     to: <notification email to address>
