@@ -72,8 +72,6 @@ func GetCertificates() (map[string]certwatch.DomainQuery, error) {
 		if (queries[domain.Name].LastCheck == time.Time{}) || (int(time.Until(queries[domain.Name].LastCheck).Hours()) >= domain.NotificationDays) {
 			certificate := Certificate(domain.Name)
 			queries[domain.Name] = certwatch.DomainQuery{Issuer: certificate.PeerCertificates[0].Issuer, LastCheck: time.Now(), NotAfter: certificate.PeerCertificates[0].NotAfter}
-		} else {
-			continue
 		}
 	}
 
@@ -132,5 +130,5 @@ func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) 
 		return
 	}
 
-	notifications.SendEmail(message, file)
+	notifications.SendEmail(message, file.Notifications.Email)
 }
