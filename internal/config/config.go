@@ -34,11 +34,9 @@ func WriteYaml(data []byte) error {
 }
 
 func ReadQueries() (map[string]certwatch.DomainQuery, error) {
-	data, err := os.ReadFile("queries.yaml")
-	if err != nil {
-		fmt.Println("File reading error: ", err)
-		return nil, err
-	}
+	fileName := "queries.yaml"
+	data, err := os.ReadFile(fileName)
+	certwatch.MissingFile(fileName, data, err)
 
 	queries := make(map[string]certwatch.DomainQuery)
 
