@@ -127,4 +127,5 @@ func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) 
 	}
 
 	notifications.SendEmail(message, configData.Notifications.Email)
+	notifications.SendSlack(message, configData.Notifications.Slack)
 }
