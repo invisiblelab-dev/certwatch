@@ -53,22 +53,15 @@ func Certificate(url string) certwatch.SSLInfo {
 	return sslInfo
 }
 
-func GetCertificates() (map[string]certwatch.DomainQuery, error) {
-	// Read config file
-	domains, err := config.ReadYaml()
-	if err != nil {
-		return nil, err
-	}
-	refresh := domains.Refresh
-
-	// Read past queries file
+func GetCertificates(configData certwatch.ConfigFile) (map[string]certwatch.DomainQuery, error) {
 	queries, err := config.ReadQueries()
 	if err != nil {
 		fmt.Println("error reading queries: ", err)
 		return nil, err
 	}
+	refresh := configData.Refresh
 
-	for _, domain := range domains.Domains {
+	for _, domain := range configData.Domains {
 		// Check if domain was not queried yet or if it was queried but in more than "refresh" seconds
 		if (queries[domain.Name].LastCheck == time.Time{}) || (int(time.Since(queries[domain.Name].LastCheck).Seconds()) >= refresh) {
 			certificate := Certificate(domain.Name)
@@ -84,22 +77,19 @@ func GetCertificates() (map[string]certwatch.DomainQuery, error) {
 	return queries, nil
 }
 
-func CalculateDaysToDeadline(certificates map[string]certwatch.DomainQuery) ([]certwatch.DomainDeadline, error) {
+func CalculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, configData certwatch.ConfigFile) ([]certwatch.DomainDeadline, error) {
 	domainsDeadlines := []certwatch.DomainDeadline{}
-	file, err := config.ReadYaml()
-	if err != nil {
-		return nil, err
-	}
-	for i := 0; i < len(file.Domains); i++ {
-		timeHours := time.Until(certificates[file.Domains[i].Name].NotAfter)
+	for i := 0; i < len(configData.Domains); i++ {
+		timeHours := time.Until(certificates[configData.Domains[i].Name].NotAfter)
 		timeDays := timeHours.Hours() / 24
+
 		var onDeadline bool
-		if timeDays <= float64(file.Domains[i].NotificationDays) {
+		if timeDays <= float64(configData.Domains[i].NotificationDays) {
 			onDeadline = true
 		} else {
 			onDeadline = false
 		}
-		deadline := certwatch.DomainDeadline{Domain: file.Domains[i].Name, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
+		deadline := certwatch.DomainDeadline{Domain: configData.Domains[i].Name, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
 		domainsDeadlines = append(domainsDeadlines, deadline)
 	}
 	return domainsDeadlines, nil
@@ -111,12 +101,18 @@ func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
 }
 
 func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) {
-	certificates, err := GetCertificates()
+	configData, err := config.ReadYaml()
+	if err != nil {
+		fmt.Println("could not read config file")
+		return
+	}
+
+	certificates, err := GetCertificates(configData)
 	if err != nil {
 		return
 	}
 
-	domainDeadlines, err := CalculateDaysToDeadline(certificates)
+	domainDeadlines, err := CalculateDaysToDeadline(certificates, configData)
 	if err != nil {
 		return
 	}
@@ -126,10 +122,5 @@ func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) 
 		return
 	}
 
-	file, err := config.ReadYaml()
-	if err != nil {
-		return
-	}
-
-	notifications.SendEmail(message, file.Notifications.Email)
+	notifications.SendEmail(message, configData.Notifications.Email)
 }
