@@ -63,9 +63,14 @@ func GetCertificates(configData certwatch.ConfigFile) (map[string]certwatch.Doma
 
 	for _, domain := range configData.Domains {
 		// Check if domain was not queried yet or if it was queried but in more than "refresh" seconds
-		if (queries[domain.Name].LastCheck == time.Time{}) || (int(time.Since(queries[domain.Name].LastCheck).Seconds()) >= refresh) {
+		if (queries[domain.Name].LastCheck == time.Time{} || int(time.Since(queries[domain.Name].LastCheck).Seconds()) >= refresh) {
 			certificate := Certificate(domain.Name)
-			queries[domain.Name] = certwatch.DomainQuery{Issuer: certificate.PeerCertificates[0].Issuer, LastCheck: time.Now(), NotAfter: certificate.PeerCertificates[0].NotAfter}
+			peerCertificate := certificate.PeerCertificates[0] // TODO if no certificate return error
+			queries[domain.Name] = certwatch.DomainQuery{
+				Issuer:    peerCertificate.Issuer,
+				LastCheck: time.Now(),
+				NotAfter:  peerCertificate.NotAfter,
+			}
 		}
 	}
 
@@ -79,17 +84,16 @@ func GetCertificates(configData certwatch.ConfigFile) (map[string]certwatch.Doma
 
 func CalculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, configData certwatch.ConfigFile) ([]certwatch.DomainDeadline, error) {
 	domainsDeadlines := []certwatch.DomainDeadline{}
-	for i := 0; i < len(configData.Domains); i++ {
-		timeHours := time.Until(certificates[configData.Domains[i].Name].NotAfter)
+	for _, domain := range configData.Domains {
+		timeHours := time.Until(certificates[domain.Name].NotAfter)
 		timeDays := timeHours.Hours() / 24
+		onDeadline := timeDays <= float64(domain.NotificationDays)
 
-		var onDeadline bool
-		if timeDays <= float64(configData.Domains[i].NotificationDays) {
-			onDeadline = true
-		} else {
-			onDeadline = false
+		deadline := certwatch.DomainDeadline{
+			Domain:           domain.Name,
+			DaysTillDeadline: timeDays,
+			OnDeadline:       onDeadline,
 		}
-		deadline := certwatch.DomainDeadline{Domain: configData.Domains[i].Name, DaysTillDeadline: timeDays, OnDeadline: onDeadline}
 		domainsDeadlines = append(domainsDeadlines, deadline)
 	}
 	return domainsDeadlines, nil
