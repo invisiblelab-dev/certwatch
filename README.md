@@ -1,5 +1,5 @@
 <p align="center">
-  <table align="center">
+  <table align="center" style="text-decoration:none">
     <tr>
     <th>
     <a href="https://www.invisiblelab.dev/">
@@ -85,12 +85,3 @@ go run ./cmd/certwatch check-all
 To check the certificates of each domain, the package is making a GET request to the domains url and returning the certificate information. After that, depending on your configuration and **days** (environment variable in `certwatch.yaml`) established, the package is able to send a notification via email and/or slack to notify that the certificate is expired or will expire in $\leq$ **days**.
 
 Because the certificates are retrieved via GET request and the certificates should not change very often, a cache file is implemented. The package will make a new GET request certificate retrieval only if there is a new domain on the `certwatch.yaml` file or if any of the certificates were last retrieved via GET request $\geq$ **refresh** days ago.
-
-## Mailtrap Email notifications
-
-To set up the email notifications you have to create a [mailtrap](https://mailtrap.io/) account. Follow this instructions to complete the setup:
-
-1. Create a mailtrap account and log in;
-2. On the left-side panel, press Email Testing and expand the category Inboxes.
-3. Tap in Mi Inbox and search for the SMTP credentials.
-4. Add the Username and password to the certwatch.yaml config file.
