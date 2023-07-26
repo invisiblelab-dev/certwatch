@@ -10,8 +10,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func ReadYaml() (certwatch.ConfigFile, error) {
-	data, err := os.ReadFile("certwatch.yaml")
+func ReadYaml(path string) (certwatch.ConfigFile, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Println("File reading error: ", err)
 		return certwatch.ConfigFile{}, err

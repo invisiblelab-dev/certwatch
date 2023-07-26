@@ -9,8 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func AddDomain(domain string, daysToNotify int) error {
-	domains, err := config.ReadYaml()
+func AddDomain(domain string, daysToNotify int, path string) error {
+	domains, err := config.ReadYaml(path)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func RunAddDomainCommand(opts certwatch.AddDomainOptions) {
 		return
 	}
 
-	err = AddDomain(url, int(opts.DaysBefore))
+	err = AddDomain(url, int(opts.DaysBefore), opts.Path)
 	if err != nil {
 		fmt.Printf("failed to add url: %v\n", err)
 		return

@@ -72,7 +72,7 @@ func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
 }
 
 func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) {
-	configData, err := config.ReadYaml()
+	configData, err := config.ReadYaml(opts.Path)
 	if err != nil {
 		fmt.Println("could not read config file", err)
 		return
