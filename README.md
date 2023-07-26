@@ -42,7 +42,7 @@ Clone the repo and complete the config file.
     you can manually add them or via the cli.
     -   name: is the domain url. It should include the subdomain, domain and top level domain with or without the protocol (e.g. [www.invisiblelab.dev](https://www.invisiblelab.dev/) or [https://www.invisiblelab.dev/](https://www.invisiblelab.dev/)).
     -   days: days until the certificate expires that you want to receive notification via slack and/or email.
--   refresh: days since last query you want to re-request the certificates. See the [Checking](https://github.com/invisiblelab-dev/certwatch#checking) section for deeper explanation.
+-   refresh: days since last query you want to re-request the certificates. See the [Checking Certificates](https://github.com/invisiblelab-dev/certwatch#checking-certificates) section for deeper explanation.
 -   notifications:
     -   email:
         -   username: smtp username given by email provider.
@@ -54,11 +54,43 @@ Clone the repo and complete the config file.
     -   slack:
         -   webhook: webhooks key. The complete url webhook should be https://hooks.slack.com/services/ + webhook. (e.g. https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX). For more information check [slack documentation](https://api.slack.com/messaging/webhooks#create_a_webhook).
 
-### Email Notifications
+## Running the cli
 
-To set up the email notifications you have to crate a [mailtrap](https://mailtrap.io/) account. Follow this instructions to complete the setup:
+To use see the cli available commands run the following:
+
+```bash
+go run ./cmd/certwatch
+```
+
+To add a domain to the `certwatch.yaml` file:
+
+```bash
+go run ./cmd/certwatch add-domain  go run ./cmd/certwatch add-domain --domain example.com --days 1
+```
+
+To check hardcoded domains certificates:
+
+```bash
+go run ./cmd/certwatch check --domain example.com --domain example2.com
+```
+
+To check all the domains in your `certwatch.yaml` file, send notifications if needed and create a `queries.yaml` file with the desired info:
+
+```bash
+go run ./cmd/certwatch check-all
+```
+
+## Checking Certificates
+
+To check the certificates of each domain, the package is making a GET request to the domains url and returning the certificate information. After that, depending on your configuration and **days** (environment variable in `certwatch.yaml`) established, the package is able to send a notification via email and/or slack to notify that the certificate is expired or will expire in $\leq$ **days**.
+
+Because the certificates are retrieved via GET request and the certificates should not change very often, a cache file is implemented. The package will make a new GET request certificate retrieval only if there is a new domain on the `certwatch.yaml` file or if any of the certificates were last retrieved via GET request $\geq$ **refresh** days ago.
+
+## Mailtrap Email notifications
+
+To set up the email notifications you have to create a [mailtrap](https://mailtrap.io/) account. Follow this instructions to complete the setup:
 
 1. Create a mailtrap account and log in;
 2. On the left-side panel, press Email Testing and expand the category Inboxes.
 3. Tap in Mi Inbox and search for the SMTP credentials.
-4. Add the Username and password to the certwatch.yaml config file
+4. Add the Username and password to the certwatch.yaml config file.
