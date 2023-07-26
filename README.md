@@ -1,5 +1,5 @@
 <p align="center">
-  <table>
+  <table align="center">
     <tr>
     <th>
     <a href="https://www.invisiblelab.dev/">
