@@ -13,7 +13,6 @@ import (
 func getCertificates(configData certwatch.ConfigFile) (map[string]certwatch.DomainQuery, error) {
 	queries, err := config.ReadQueries()
 	if err != nil {
-		fmt.Println("error reading queries: ", err)
 		return nil, err
 	}
 
@@ -38,7 +37,6 @@ func getCertificates(configData certwatch.ConfigFile) (map[string]certwatch.Doma
 
 	err = config.WriteQueries(queries)
 	if err != nil {
-		fmt.Println("error writing query file err:", err)
 		return nil, err
 	}
 	return queries, nil
@@ -83,15 +81,18 @@ func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) 
 	message, err := notifications.ComposeMessage(domainDeadlines)
 	if err != nil {
 		fmt.Println("failed to compose message:", err)
+		return
 	}
 
 	err = notifications.SendEmail(message, configData.Notifications.Email)
 	if err != nil {
 		fmt.Println("failed to send email:", err)
+		return
 	}
 
 	err = notifications.SendSlack(message, configData.Notifications.Slack)
 	if err != nil {
 		fmt.Println("failed to send slack:", err)
+		return
 	}
 }

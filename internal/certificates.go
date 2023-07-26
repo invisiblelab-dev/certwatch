@@ -57,7 +57,6 @@ func Certificate(domain string) (SSLInfo, error) {
 
 	resp, err := client.Get(url)
 	if err != nil {
-		fmt.Println("Error:", err)
 		return SSLInfo{}, err
 	}
 	defer resp.Body.Close()
