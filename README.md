@@ -1,19 +1,10 @@
-<p align="center">
-  <table align="center" style="text-decoration:none">
-    <tr>
-    <th>
+<p align="center" style="font-size:360%;" >
     <a href="https://www.invisiblelab.dev/">
-    <h1>CertWatch</h1>
-</th>
-<th>
-<h1>
-<a href="https://www.invisiblelab.dev/">
+    CertWatch  
+    </a>
+    <a href="https://www.invisiblelab.dev/">
     <img src="https://uploads-ssl.webflow.com/60057003af6cfb7362bab247/6005a8ba64602c1ef34c244f_brand.svg" width="100px" alt="InvisibleLab logo" />
-  </a>
-  </h1>
-  </th>
-  </tr>
-  </table>
+    </a>
 </p>
 
 <h3 align="center">Web page SSL Certificate watcher package and cli tool.</h3>
