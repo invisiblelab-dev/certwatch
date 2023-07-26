@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	certwatch "github.com/invisiblelab-dev/certwatch/internal"
+	certwatch "github.com/invisiblelab-dev/certwatch"
 )
 
 func SendSlack(subject string, slackHook certwatch.Slack) error {

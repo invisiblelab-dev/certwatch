@@ -1,8 +1,8 @@
 package commands
 
 import (
-	certwatch "github.com/invisiblelab-dev/certwatch/internal"
-	"github.com/invisiblelab-dev/certwatch/internal/runners"
+	"github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch/runners"
 	"github.com/spf13/cobra"
 )
 
