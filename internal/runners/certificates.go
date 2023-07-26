@@ -120,11 +120,8 @@ func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) 
 	if err != nil {
 		return
 	}
-
-	message, err := notifications.ComposeMessage(domainDeadlines)
-	if err != nil {
-		return
-	}
+	message := notifications.ComposeMessage(domainDeadlines)
 
 	notifications.SendEmail(message, configData.Notifications.Email)
+	notifications.SendSlack(message, configData.Notifications.Slack)
 }
