@@ -16,11 +16,12 @@ func getCertificates(configData certwatch.ConfigFile) (map[string]certwatch.Doma
 		fmt.Println("error reading queries: ", err)
 		return nil, err
 	}
-	refresh := configData.Refresh
 
 	for _, domain := range configData.Domains {
-		// Check if domain was not queried yet or if it was queried but in more than "refresh" seconds
-		if (queries[domain.Name].LastCheck == time.Time{} || int(time.Since(queries[domain.Name].LastCheck).Seconds()) >= refresh) {
+		domainLastCheck := queries[domain.Name].LastCheck
+		timeSinceLastCheck := time.Since(domainLastCheck).Seconds()
+
+		if int(timeSinceLastCheck) >= configData.Refresh {
 			certificate, err := certwatch.Certificate(domain.Name)
 			if err != nil {
 				return nil, err
