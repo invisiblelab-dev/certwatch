@@ -1,4 +1,4 @@
-<p align="center" style="font-size:360%;" >
+<p align="center" style="font-size:70px;" >
     <a href="https://www.invisiblelab.dev/">
     CertWatch  
     </a>
