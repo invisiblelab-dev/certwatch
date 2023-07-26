@@ -10,17 +10,17 @@ import (
 	"github.com/invisiblelab-dev/certwatch/notifications"
 )
 
-func getCertificates(configData certwatch.ConfigFile) (map[string]certwatch.DomainQuery, error) {
+func getCertificates(domains []certwatch.Domain, refresh int) (map[string]certwatch.DomainQuery, error) {
 	queries, err := config.ReadQueries()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, domain := range configData.Domains {
+	for _, domain := range domains {
 		domainLastCheck := queries[domain.Name].LastCheck
 		timeSinceLastCheck := time.Since(domainLastCheck).Seconds()
 
-		if int(timeSinceLastCheck) >= configData.Refresh {
+		if int(timeSinceLastCheck) >= refresh {
 			certificate, err := certwatch.Certificate(domain.Name)
 			if err != nil {
 				return nil, err
@@ -60,8 +60,15 @@ func calculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, conf
 }
 
 func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
-	fmt.Println("domains", opts.Domains)
-	panic("not implemented")
+	for _, domain := range opts.Domains {
+		fmt.Println("Domain:", domain)
+		certificate, err := certwatch.Certificate(domain)
+		if err != nil {
+			continue
+		}
+		peerCertificate := certificate.PeerCertificates[0]
+		fmt.Println(peerCertificate.String())
+	}
 }
 
 func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) {
@@ -71,7 +78,7 @@ func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) 
 		return
 	}
 
-	certificates, err := getCertificates(configData)
+	certificates, err := getCertificates(configData.Domains, configData.Refresh)
 	if err != nil {
 		fmt.Println("failed to get certificates", err)
 		return

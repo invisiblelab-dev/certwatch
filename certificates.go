@@ -41,6 +41,15 @@ type DomainQuery struct {
 	NotAfter  time.Time
 }
 
+func (certInfo CertificateInfo) String() string {
+	return fmt.Sprintf(" Subject: %s \n Issuer: %s \n NotBefore: %s \n NotAfter: %s\n\n",
+		certInfo.Subject,
+		certInfo.Issuer,
+		certInfo.NotBefore,
+		certInfo.NotAfter,
+	)
+}
+
 func Certificate(domain string) (SSLInfo, error) {
 	// Create a new client with a timeout of 5 seconds
 	client := &http.Client{
