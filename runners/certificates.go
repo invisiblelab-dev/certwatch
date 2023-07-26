@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	certwatch "github.com/invisiblelab-dev/certwatch/internal"
-	"github.com/invisiblelab-dev/certwatch/internal/config"
+	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch/config"
 
-	"github.com/invisiblelab-dev/certwatch/internal/notifications"
+	"github.com/invisiblelab-dev/certwatch/notifications"
 )
 
 func getCertificates(configData certwatch.ConfigFile) (map[string]certwatch.DomainQuery, error) {

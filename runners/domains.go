@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	certwatch "github.com/invisiblelab-dev/certwatch/internal"
-	"github.com/invisiblelab-dev/certwatch/internal/config"
+	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch/config"
 	"gopkg.in/yaml.v3"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	certwatch "github.com/invisiblelab-dev/certwatch/internal"
+	certwatch "github.com/invisiblelab-dev/certwatch"
 )
 
 func ComposeMessage(domainDeadlines []certwatch.DomainDeadline) (string, error) {
