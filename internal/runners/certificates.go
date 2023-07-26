@@ -80,7 +80,10 @@ func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) 
 	}
 
 	domainDeadlines := calculateDaysToDeadline(certificates, configData)
-	message := notifications.ComposeMessage(domainDeadlines)
+	message, err := notifications.ComposeMessage(domainDeadlines)
+	if err != nil {
+		fmt.Println("failed to compose message:", err)
+	}
 
 	err = notifications.SendEmail(message, configData.Notifications.Email)
 	if err != nil {

@@ -32,7 +32,7 @@ func AddDomain(domain string, daysToNotify int) error {
 }
 
 func RunAddDomainCommand(opts certwatch.AddDomainOptions) {
-	url, err := certwatch.FormatDomain(opts.Domain)
+	url, err := certwatch.AddHttps(opts.Domain)
 	if err != nil {
 		fmt.Println("error parsing domain:", err)
 	}

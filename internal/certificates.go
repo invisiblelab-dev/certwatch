@@ -50,7 +50,7 @@ func Certificate(domain string) (SSLInfo, error) {
 		},
 	}
 
-	url, err := FormatDomain(domain)
+	url, err := AddHttps(domain)
 	if err != nil {
 		return SSLInfo{}, err
 	}

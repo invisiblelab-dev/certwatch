@@ -10,7 +10,7 @@ type Domain struct {
 	NotificationDays int    `yaml:"days"`
 }
 
-func FormatDomain(domain string) (string, error) {
+func AddHttps(domain string) (string, error) {
 	url, err := url.Parse(domain)
 	if err != nil {
 		fmt.Printf("failed to parse url: %v\n", err)
@@ -22,4 +22,20 @@ func FormatDomain(domain string) (string, error) {
 	}
 
 	return url.String(), nil
+}
+
+func RemoveHttps(domain string) (string, error) {
+	url, err := url.Parse(domain)
+	if err != nil {
+		fmt.Printf("failed to parse url: %v\n", err)
+		return "", err
+	}
+	scheme := url.Scheme
+	url.Scheme = ""
+	fmtUrl := url.String()
+
+	if scheme == "https" {
+		fmtUrl = fmtUrl[2:]
+	}
+	return fmtUrl, nil
 }
