@@ -1,9 +1,7 @@
 package runners
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"time"
 
 	certwatch "github.com/invisiblelab-dev/certwatch/internal"
@@ -12,48 +10,7 @@ import (
 	"github.com/invisiblelab-dev/certwatch/internal/notifications"
 )
 
-func Certificate(url string) certwatch.SSLInfo {
-	// Create a new client with a timeout of 5 seconds
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
-	// Make a GET request to the URL
-	resp, err := client.Get(url)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return certwatch.SSLInfo{}
-	}
-	defer resp.Body.Close()
-
-	// Create a new instance of SSLInfo
-	sslInfo := certwatch.SSLInfo{
-		Version:           resp.TLS.Version,
-		HandshakeComplete: resp.TLS.HandshakeComplete,
-		DidResume:         resp.TLS.DidResume,
-		CipherSuite:       resp.TLS.CipherSuite,
-	}
-
-	// Retrieve information about the peer certificates
-	cert := resp.TLS.PeerCertificates[0]
-	peerCertificate := certwatch.CertificateInfo{
-		Subject:            cert.Subject.String(),
-		Issuer:             cert.Issuer.String(),
-		NotBefore:          cert.NotBefore,
-		NotAfter:           cert.NotAfter,
-		SignatureAlgorithm: cert.SignatureAlgorithm.String(),
-		PublicKeyAlgorithm: cert.PublicKeyAlgorithm.String(),
-	}
-
-	sslInfo.PeerCertificates = append(sslInfo.PeerCertificates, peerCertificate)
-
-	return sslInfo
-}
-
-func GetCertificates(configData certwatch.ConfigFile) (map[string]certwatch.DomainQuery, error) {
+func getCertificates(configData certwatch.ConfigFile) (map[string]certwatch.DomainQuery, error) {
 	queries, err := config.ReadQueries()
 	if err != nil {
 		fmt.Println("error reading queries: ", err)
@@ -64,8 +21,12 @@ func GetCertificates(configData certwatch.ConfigFile) (map[string]certwatch.Doma
 	for _, domain := range configData.Domains {
 		// Check if domain was not queried yet or if it was queried but in more than "refresh" seconds
 		if (queries[domain.Name].LastCheck == time.Time{} || int(time.Since(queries[domain.Name].LastCheck).Seconds()) >= refresh) {
-			certificate := Certificate(domain.Name)
-			peerCertificate := certificate.PeerCertificates[0] // TODO if no certificate return error
+			certificate, err := certwatch.Certificate(domain.Name)
+			if err != nil {
+				return nil, err
+			}
+
+			peerCertificate := certificate.PeerCertificates[0]
 			queries[domain.Name] = certwatch.DomainQuery{
 				Issuer:    peerCertificate.Issuer,
 				LastCheck: time.Now(),
@@ -82,7 +43,7 @@ func GetCertificates(configData certwatch.ConfigFile) (map[string]certwatch.Doma
 	return queries, nil
 }
 
-func CalculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, configData certwatch.ConfigFile) ([]certwatch.DomainDeadline, error) {
+func calculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, configData certwatch.ConfigFile) []certwatch.DomainDeadline {
 	domainsDeadlines := []certwatch.DomainDeadline{}
 	for _, domain := range configData.Domains {
 		timeHours := time.Until(certificates[domain.Name].NotAfter)
@@ -96,7 +57,7 @@ func CalculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, conf
 		}
 		domainsDeadlines = append(domainsDeadlines, deadline)
 	}
-	return domainsDeadlines, nil
+	return domainsDeadlines
 }
 
 func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
@@ -107,21 +68,26 @@ func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
 func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) {
 	configData, err := config.ReadYaml()
 	if err != nil {
-		fmt.Println("could not read config file")
+		fmt.Println("could not read config file", err)
 		return
 	}
 
-	certificates, err := GetCertificates(configData)
+	certificates, err := getCertificates(configData)
 	if err != nil {
+		fmt.Println("failed to get certificates", err)
 		return
 	}
 
-	domainDeadlines, err := CalculateDaysToDeadline(certificates, configData)
-	if err != nil {
-		return
-	}
+	domainDeadlines := calculateDaysToDeadline(certificates, configData)
 	message := notifications.ComposeMessage(domainDeadlines)
 
-	notifications.SendEmail(message, configData.Notifications.Email)
-	notifications.SendSlack(message, configData.Notifications.Slack)
+	err = notifications.SendEmail(message, configData.Notifications.Email)
+	if err != nil {
+		fmt.Println("failed to send email:", err)
+	}
+
+	err = notifications.SendSlack(message, configData.Notifications.Slack)
+	if err != nil {
+		fmt.Println("failed to send slack:", err)
+	}
 }
