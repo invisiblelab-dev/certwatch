@@ -1,8 +1,8 @@
 package commands
 
 import (
-	certwatch "github.com/invisiblelab-dev/certwatch/internal"
-	"github.com/invisiblelab-dev/certwatch/internal/runners"
+	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch/runners"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +18,8 @@ func newAddDomainCommand() *cobra.Command {
 
 	addDomainCommand.Flags().StringVar(&opts.Domain, "domain", "", "domain to be tracked")
 	addDomainCommand.Flags().Int32Var(&opts.DaysBefore, "days", 10, "number of days before expire")
+	addDomainCommand.Flags().StringVar(&opts.Path, "path", "certwatch.yaml", "define path to config file")
+
 	cobra.CheckErr(addDomainCommand.MarkFlagRequired("domain"))
 
 	return addDomainCommand

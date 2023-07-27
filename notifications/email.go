@@ -5,7 +5,7 @@ import (
 	"net/smtp"
 	"strconv"
 
-	certwatch "github.com/invisiblelab-dev/certwatch/internal"
+	certwatch "github.com/invisiblelab-dev/certwatch"
 )
 
 func SendEmail(subject string, emailConfig certwatch.Email) error {

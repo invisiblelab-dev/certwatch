@@ -1,8 +1,8 @@
 package commands
 
 import (
-	certwatch "github.com/invisiblelab-dev/certwatch/internal"
-	"github.com/invisiblelab-dev/certwatch/internal/runners"
+	"github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch/runners"
 	"github.com/spf13/cobra"
 )
 
@@ -30,6 +30,7 @@ func newCheckAllCertificatesCommand() *cobra.Command {
 	}
 
 	checkCertificatesCommand.Flags().BoolVar(&opts.Force, "force", false, "force check every domain")
+	checkCertificatesCommand.Flags().StringVar(&opts.Path, "path", "certwatch.yaml", "define path to config file")
 
 	return checkCertificatesCommand
 }
