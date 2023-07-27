@@ -30,6 +30,7 @@ func newCheckAllCertificatesCommand() *cobra.Command {
 	}
 
 	checkCertificatesCommand.Flags().BoolVar(&opts.Force, "force", false, "force check every domain")
+	checkCertificatesCommand.Flags().StringVar(&opts.Path, "path", "certwatch.yaml", "define path to config file")
 
 	return checkCertificatesCommand
 }
