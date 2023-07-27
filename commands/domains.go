@@ -14,8 +14,11 @@ func newAddDomainCommand() *cobra.Command {
 		Use:   "add-domain",
 		Short: "Add a new domain and the number of days you want to be notified before it expires",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := runners.RunAddDomainCommand(opts)
-			return fmt.Errorf("failed to run RunAddDomainCommand: %w", err)
+			if err := runners.RunAddDomainCommand(opts); err != nil {
+				return fmt.Errorf("add-domain: %w", err)
+			}
+
+			return nil
 		},
 	}
 

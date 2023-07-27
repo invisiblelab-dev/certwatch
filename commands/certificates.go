@@ -15,7 +15,7 @@ func newCheckCertificatesCommand() *cobra.Command {
 		Short: "Check if given domains are close to end",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := runners.RunCheckCertificatesCommand(opts); err != nil {
-				return fmt.Errorf("failed to run RunCheckCertificatesCommand: %w", err)
+				return fmt.Errorf("check: %w", err)
 			}
 
 			return nil
@@ -33,7 +33,7 @@ func newCheckAllCertificatesCommand() *cobra.Command {
 		Short: "Check if your added domains are close to end",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := runners.RunCheckAllCertificatesCommand(opts); err != nil {
-				return fmt.Errorf("failed to run RunCheckAllCertificatesCommand: %w", err)
+				return fmt.Errorf("check-all: %w", err)
 			}
 
 			return nil
