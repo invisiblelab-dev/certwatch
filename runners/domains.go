@@ -28,7 +28,7 @@ func AddDomain(domain string, daysToNotify int, path string) error {
 		fmt.Println("error marshalling file: ", err)
 		return err
 	}
-	return config.WriteYaml(marshalData)
+	return config.WriteYaml(marshalData, path)
 }
 
 func RunAddDomainCommand(opts certwatch.AddDomainOptions) {
