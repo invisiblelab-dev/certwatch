@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/invisiblelab-dev/certwatch"
 	"github.com/invisiblelab-dev/certwatch/runners"
 	"github.com/spf13/cobra"
@@ -11,11 +13,16 @@ func newCheckCertificatesCommand() *cobra.Command {
 	checkCertificatesCommand := &cobra.Command{
 		Use:   "check",
 		Short: "Check if given domains are close to end",
-		Run: func(cmd *cobra.Command, args []string) {
-			runners.RunCheckCertificatesCommand(opts)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := runners.RunCheckCertificatesCommand(opts); err != nil {
+				return fmt.Errorf("failed to run RunCheckCertificatesCommand: %w", err)
+			}
+
+			return nil
 		},
 	}
 	checkCertificatesCommand.Flags().StringSliceVar(&opts.Domains, "domain", []string{}, "domains to check, separated by comma")
+
 	return checkCertificatesCommand
 }
 
@@ -24,8 +31,12 @@ func newCheckAllCertificatesCommand() *cobra.Command {
 	checkCertificatesCommand := &cobra.Command{
 		Use:   "check-all",
 		Short: "Check if your added domains are close to end",
-		Run: func(cmd *cobra.Command, args []string) {
-			runners.RunCheckAllCertificatesCommand(opts)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := runners.RunCheckAllCertificatesCommand(opts); err != nil {
+				return fmt.Errorf("failed to run RunCheckAllCertificatesCommand: %w", err)
+			}
+
+			return nil
 		},
 	}
 

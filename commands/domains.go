@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	certwatch "github.com/invisiblelab-dev/certwatch"
 	"github.com/invisiblelab-dev/certwatch/runners"
 	"github.com/spf13/cobra"
@@ -11,8 +13,9 @@ func newAddDomainCommand() *cobra.Command {
 	addDomainCommand := &cobra.Command{
 		Use:   "add-domain",
 		Short: "Add a new domain and the number of days you want to be notified before it expires",
-		Run: func(cmd *cobra.Command, args []string) {
-			runners.RunAddDomainCommand(opts)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := runners.RunAddDomainCommand(opts)
+			return fmt.Errorf("failed to run RunAddDomainCommand: %w", err)
 		},
 	}
 
