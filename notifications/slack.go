@@ -3,22 +3,75 @@ package notifications
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
-
-	certwatch "github.com/invisiblelab-dev/certwatch"
 )
 
-func SendSlack(subject string, slackHook certwatch.Slack) error {
-	url := "https://hooks.slack.com/services/" + slackHook.Webhook
+type Text struct {
+	Type string   `json:"type"`
+	Text TextBody `json:"text"`
+}
 
-	var jsonStr = []byte(fmt.Sprintf(`{"text": "%s"}`, subject))
+type TextBody struct {
+	Type  string `json:"type"`
+	Text  string `json:"text"`
+	Emoji bool   `json:"emoji,omitempty"`
+}
+
+type SlackNotifier struct {
+	Webhook string
+}
+
+func NewSlackNotifier(webhook string) *SlackNotifier {
+	return &SlackNotifier{webhook}
+}
+
+func (s *SlackNotifier) Notify(title string, message string, recipients ...string) error {
+	payload, err := json.Marshal(s.blocks(title, message))
+	if err != nil {
+		return fmt.Errorf("failed to marshal slack payload: %w", err)
+	}
+
+	if err := s.post(recipients[0], payload); err != nil {
+		return fmt.Errorf("failed to send slack message: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SlackNotifier) Recipient() string {
+	return s.Webhook
+}
+
+func (s *SlackNotifier) blocks(title string, message string) map[string]any {
+	return map[string]any{
+		"blocks": []Text{
+			{
+				Type: "header",
+				Text: TextBody{
+					Type: "plain_text",
+					Text: title,
+				},
+			},
+			{
+				Type: "section",
+				Text: TextBody{
+					Type: "plain_text",
+					Text: message,
+				},
+			},
+		},
+	}
+}
+
+func (s *SlackNotifier) post(recipient string, payload []byte) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, recipient, bytes.NewBuffer(payload))
 	if err != nil {
 		return fmt.Errorf("failed to setup slack request: %w", err)
 	}

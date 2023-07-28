@@ -14,7 +14,7 @@ func AddDomain(domain string, daysToNotify int, path string) error {
 	if err != nil {
 		return fmt.Errorf("error while reading yaml file %s: %w", path, err)
 	}
-	newDomain := certwatch.Domain{Name: domain, NotificationDays: daysToNotify}
+	newDomain := certwatch.Domain{Name: domain, Threshold: daysToNotify}
 
 	for _, listedDomain := range domains.Domains {
 		if listedDomain.Name == domain {

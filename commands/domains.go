@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch"
 	"github.com/invisiblelab-dev/certwatch/runners"
 	"github.com/spf13/cobra"
 )

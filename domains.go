@@ -5,11 +5,6 @@ import (
 	"net/url"
 )
 
-type Domain struct {
-	Name             string `yaml:"name"`
-	NotificationDays int    `yaml:"days"`
-}
-
 // TODO: review logic later
 func AddHTTPS(domain string) (string, error) {
 	url, err := url.Parse(domain)

@@ -26,13 +26,13 @@ func newCheckCertificatesCommand() *cobra.Command {
 	return checkCertificatesCommand
 }
 
-func newCheckAllCertificatesCommand() *cobra.Command {
+func newCheckAllCertificatesCommand(cfg *certwatch.Config) *cobra.Command {
 	opts := certwatch.CheckAllCertificatesOptions{}
 	checkCertificatesCommand := &cobra.Command{
 		Use:   "check-all",
 		Short: "Check if your added domains are close to end",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := runners.RunCheckAllCertificatesCommand(opts); err != nil {
+			if err := runners.RunCheckAllCertificatesCommand(opts, cfg); err != nil {
 				return fmt.Errorf("check-all: %w", err)
 			}
 
@@ -41,7 +41,7 @@ func newCheckAllCertificatesCommand() *cobra.Command {
 	}
 
 	checkCertificatesCommand.Flags().BoolVar(&opts.Force, "force", false, "force check every domain")
-	checkCertificatesCommand.Flags().StringVar(&opts.Path, "path", "certwatch.yaml", "define path to config file")
+	checkCertificatesCommand.Flags().StringVar(&opts.Path, "config", "certwatch.yaml", "define path to config file")
 
 	return checkCertificatesCommand
 }

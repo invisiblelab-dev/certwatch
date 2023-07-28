@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"os"
 
-	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch"
 	"gopkg.in/yaml.v3"
 )
 
