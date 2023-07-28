@@ -6,7 +6,6 @@ import (
 
 	"github.com/invisiblelab-dev/certwatch"
 	"github.com/invisiblelab-dev/certwatch/config"
-	"gopkg.in/yaml.v3"
 )
 
 func AddDomain(domain string, daysToNotify int, path string) error {
@@ -23,12 +22,8 @@ func AddDomain(domain string, daysToNotify int, path string) error {
 	}
 
 	domains.Domains = append(domains.Domains, newDomain)
-	marshalData, err := yaml.Marshal(&domains)
-	if err != nil {
-		return fmt.Errorf("error while marshalling yaml file %w", err)
-	}
 
-	if err := config.WriteYaml(marshalData, path); err != nil {
+	if err := config.WriteYaml(domains, path); err != nil {
 		return fmt.Errorf("failed to add domain: %w", err)
 	}
 

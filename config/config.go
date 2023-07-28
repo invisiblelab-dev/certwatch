@@ -25,8 +25,12 @@ func ReadYaml(path string) (certwatch.ConfigFile, error) {
 	return domains, nil
 }
 
-func WriteYaml(data []byte, path string) error {
-	err := os.WriteFile(path, data, 0600)
+func WriteYaml(domains certwatch.ConfigFile, path string) error {
+	marshalData, err := yaml.Marshal(&domains)
+	if err != nil {
+		return fmt.Errorf("error while marshalling yaml file %w", err)
+	}
+	err = os.WriteFile(path, marshalData, 0600)
 	if err != nil {
 		return fmt.Errorf("[config.WriteFile] failed to write yaml file %s: %w", path, err)
 	}

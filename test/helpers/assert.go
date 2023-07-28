@@ -1,4 +1,4 @@
-package assert
+package helpers
 
 import "testing"
 
