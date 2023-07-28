@@ -10,16 +10,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func ReadYaml(path string) (certwatch.ConfigFile, error) {
+func ReadYaml(path string) (certwatch.Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return certwatch.ConfigFile{}, fmt.Errorf("failed to read config file [%s]: %w", path, err)
+		return certwatch.Config{}, fmt.Errorf("failed to read config file [%s]: %w", path, err)
 	}
 
-	var domains certwatch.ConfigFile
+	var domains certwatch.Config
 	err = yaml.Unmarshal(data, &domains)
 	if err != nil {
-		return certwatch.ConfigFile{}, fmt.Errorf("failed to unmarshal config file [%s]: %w", path, err)
+		return certwatch.Config{}, fmt.Errorf("failed to unmarshal config file [%s]: %w", path, err)
 	}
 
 	return domains, nil

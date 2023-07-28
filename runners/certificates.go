@@ -43,7 +43,7 @@ func getCertificates(domains []certwatch.Domain, refresh int) (map[string]certwa
 	return queries, nil
 }
 
-func calculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, configData certwatch.ConfigFile) []certwatch.DomainDeadline {
+func calculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, configData certwatch.Config) []certwatch.DomainDeadline {
 	domainsDeadlines := []certwatch.DomainDeadline{}
 	for _, domain := range configData.Domains {
 		timeHours := time.Until(certificates[domain.Name].NotAfter)

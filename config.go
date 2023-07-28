@@ -1,6 +1,6 @@
 package certwatch
 
-type ConfigFile struct {
+type Config struct {
 	Domains       []Domain `yml:"domains"`
 	Refresh       int      `yml:"refresh"`
 	Notifications struct {
@@ -11,4 +11,13 @@ type ConfigFile struct {
 
 type Slack struct {
 	Webhook string
+}
+
+type Email struct {
+	Username string `yml:"username"`
+	Password string `yml:"password"`
+	SMTPHost string `yml:"smtphost"`
+	Port     int    `yml:"port"`
+	From     string `yml:"from"`
+	To       string `yml:"to"`
 }

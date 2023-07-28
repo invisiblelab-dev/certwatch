@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch"
 )
 
 // TODO: later review logic
