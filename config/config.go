@@ -13,44 +13,43 @@ import (
 func ReadYaml(path string) (certwatch.ConfigFile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Println("File reading error: ", err)
-		return certwatch.ConfigFile{}, err
+		return certwatch.ConfigFile{}, fmt.Errorf("failed to read config file [%s]: %w", path, err)
 	}
 
 	var domains certwatch.ConfigFile
 	err = yaml.Unmarshal(data, &domains)
 	if err != nil {
-		fmt.Println("File parsing error: ", err)
-		return certwatch.ConfigFile{}, err
+		return certwatch.ConfigFile{}, fmt.Errorf("failed to unmarshal config file [%s]: %w", path, err)
 	}
+
 	return domains, nil
 }
 
 func WriteYaml(data []byte, path string) error {
-	err := os.WriteFile(path, data, 0644)
+	err := os.WriteFile(path, data, 0600)
 	if err != nil {
-		fmt.Println("not writing file, error: ", err)
-		return err
+		return fmt.Errorf("[config.WriteFile] failed to write yaml file %s: %w", path, err)
 	}
+
 	return nil
 }
 
 func ReadQueries() (map[string]certwatch.DomainQuery, error) {
 	queries := make(map[string]certwatch.DomainQuery)
 
-	fileName := "queries.yaml"
-	data, err := os.ReadFile(fileName)
+	filename := "queries.yaml"
+	data, err := os.ReadFile(filename)
+
 	if errors.Is(err, fs.ErrNotExist) {
 		return queries, nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read queries file [%s]: %w", filename, err)
 	}
 
 	err = yaml.Unmarshal(data, &queries)
 	if err != nil {
-		fmt.Println("File unmarshall error: ", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal config file [%s]: %w", filename, err)
 	}
 
 	return queries, nil
@@ -59,12 +58,13 @@ func ReadQueries() (map[string]certwatch.DomainQuery, error) {
 func WriteQueries(data map[string]certwatch.DomainQuery) error {
 	marshalData, err := yaml.Marshal(&data)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal queries payload: %w", err)
 	}
 
-	err = os.WriteFile("queries.yaml", marshalData, 0644)
+	err = os.WriteFile("queries.yaml", marshalData, 0600)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to writes queries [%s]: %w", "queries.yaml", err)
 	}
+
 	return nil
 }

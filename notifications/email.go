@@ -1,7 +1,7 @@
 package notifications
 
 import (
-	"log"
+	"fmt"
 	"net/smtp"
 	"strconv"
 
@@ -11,7 +11,7 @@ import (
 func SendEmail(subject string, emailConfig certwatch.Email) error {
 	username := emailConfig.Username
 	password := emailConfig.Password
-	smtpHost := emailConfig.SmtpHost
+	smtpHost := emailConfig.SMTPHost
 	port := emailConfig.Port
 
 	auth := smtp.PlainAuth("", username, password, smtpHost)
@@ -23,11 +23,12 @@ func SendEmail(subject string, emailConfig certwatch.Email) error {
 		"Subject: " + subject
 
 	message := []byte(email)
-	smtpUrl := smtpHost + ":" + strconv.Itoa(port)
-	err := smtp.SendMail(smtpUrl, auth, from, to, message)
+	smtpURL := smtpHost + ":" + strconv.Itoa(port)
+
+	err := smtp.SendMail(smtpURL, auth, from, to, message)
 	if err != nil {
-		log.Fatal(err)
-		return err
+		return fmt.Errorf("failed to send email: %w", err)
 	}
+
 	return nil
 }

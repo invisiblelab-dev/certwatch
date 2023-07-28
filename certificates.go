@@ -1,6 +1,7 @@
 package certwatch
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -55,19 +56,30 @@ func Certificate(domain string) (SSLInfo, error) {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 		Transport: &http.Transport{
+			// TODO: check the need for skipping checks
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
 
-	url, err := AddHttps(domain)
+	url, err := AddHTTPS(domain)
 	if err != nil {
 		return SSLInfo{}, err
 	}
 
-	resp, err := client.Get(url)
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return SSLInfo{}, err
+		return SSLInfo{}, fmt.Errorf("failed to setup certificate request: %w", err)
 	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return SSLInfo{}, fmt.Errorf("failed to get certificate for %s: %w", url, err)
+	}
+
 	defer resp.Body.Close()
 
 	// Create a new instance of SSLInfo
