@@ -34,7 +34,7 @@ func RemoveHttps(domain string) (string, error) {
 	url.Scheme = ""
 	fmtUrl := url.String()
 
-	if scheme == "https" {
+	if scheme[0:4] == "http" {
 		fmtUrl = fmtUrl[2:]
 	}
 	return fmtUrl, nil
