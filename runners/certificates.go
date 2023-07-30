@@ -7,6 +7,7 @@ import (
 
 	"github.com/invisiblelab-dev/certwatch"
 	"github.com/invisiblelab-dev/certwatch/config"
+	"github.com/invisiblelab-dev/certwatch/factory"
 	"github.com/invisiblelab-dev/certwatch/notifications"
 )
 
@@ -77,32 +78,22 @@ func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) error 
 	return nil
 }
 
-func RunCheckAllCertificatesCommand(_ certwatch.CheckAllCertificatesOptions, cfg *certwatch.Config) error {
+func RunCheckAllCertificatesCommand(f *factory.Factory, cfg *certwatch.Config) error {
+	notifier := f.NotifierService()
 	certificates, err := scanAll(cfg.Domains, cfg.Refresh)
 	if err != nil {
 		return fmt.Errorf("failed to scan certificates: %w", err)
 	}
 
 	domainDeadlines := calculateDaysToDeadline(certificates, cfg)
-	_, err = notifications.ComposeMessage(domainDeadlines)
+	msg, err := notifications.ComposeMessage(domainDeadlines)
 	if err != nil {
 		return fmt.Errorf("failed to compose message: %w", err)
 	}
 
-	// notifier := notifications.NewNotifier(cfg)
-	// notifier.Notify(message)
-
-	// notifications.Send(message)
-
-	// err = notifications.SendEmail(message, cfg.Notifications.Email)
-	// if err != nil {
-	// 	return fmt.Errorf("email error: %w", err)
-	// }
-
-	// err = notifications.SendSlack(message, cfg.Notifications.Slack)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to send slack notification: %w", err)
-	// }
+	if err := notifier.Notify("CertWatch Scan", msg); err != nil {
+		return fmt.Errorf("failed to tigger notifications: %w", err)
+	}
 
 	return nil
 }

@@ -49,16 +49,16 @@ func (s *SlackNotifier) blocks(title string, message string) map[string]any {
 	return map[string]any{
 		"blocks": []Text{
 			{
-				Type: "header",
+				Type: "section",
 				Text: TextBody{
-					Type: "plain_text",
-					Text: title,
+					Type: "mrkdwn",
+					Text: fmt.Sprintf("🚨 *%s*", title),
 				},
 			},
 			{
 				Type: "section",
 				Text: TextBody{
-					Type: "plain_text",
+					Type: "mrkdwn",
 					Text: message,
 				},
 			},

@@ -46,10 +46,10 @@ func ComposeMessage(domainDeadlines []certwatch.DomainDeadline) (string, error) 
 			}
 			if domainDeadline.DaysTillDeadline <= 0 {
 				days := int64(math.Abs(domainDeadline.DaysTillDeadline))
-				message.WriteString(fmt.Sprintf("%s certificate has expired %d days ago.", domain, days))
+				message.WriteString(fmt.Sprintf("- %s certificate has expired %d days ago.", domain, days))
 			} else {
 				days := int64(domainDeadline.DaysTillDeadline)
-				message.WriteString(fmt.Sprintf("%s certificate expires in %d days.", domain, days))
+				message.WriteString(fmt.Sprintf("- %s certificate expires in %d days.", domain, days))
 			}
 			message.WriteString("\n")
 		}

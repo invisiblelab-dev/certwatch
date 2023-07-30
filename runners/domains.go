@@ -45,7 +45,7 @@ func RunAddDomainCommand(opts certwatch.AddDomainOptions) error {
 		return fmt.Errorf("days can't be <= 0: %d", opts.DaysBefore)
 	}
 
-	err = AddDomain(url, int(opts.DaysBefore), opts.Path)
+	err = AddDomain(url, int(opts.DaysBefore), opts.Config)
 	if err != nil {
 		return fmt.Errorf("failed to add url: %w", err)
 	}

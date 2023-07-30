@@ -15,6 +15,10 @@ type Email struct {
 	To       string `yml:"to"`
 }
 
+type Stdout struct {
+	Enabled bool `yml:"enabled"`
+}
+
 type Domain struct {
 	Name      string `yaml:"name"`
 	Threshold int    `yaml:"threshold"`
@@ -24,7 +28,8 @@ type Config struct {
 	Domains       []Domain `yml:"domains"`
 	Refresh       int      `yml:"refresh"`
 	Notifications struct {
-		Email `yml:"email"`
-		Slack `yml:"slack"`
+		Email  `yml:"email"`
+		Slack  `yml:"slack"`
+		Stdout `yml:"stdout"`
 	} `yml:"notifications"`
 }

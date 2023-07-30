@@ -31,7 +31,7 @@ func (e *EmailNotifier) Notify(title string, message string, recipients ...strin
 
 	addr := fmt.Sprintf("%s:%d", e.cfg.Host, e.cfg.Port)
 	auth := smtp.PlainAuth("", e.cfg.Login, e.cfg.Password, e.cfg.Host)
-	err := smtp.SendMail(addr, auth, e.cfg.From, recipients, []byte(message))
+	err := smtp.SendMail(addr, auth, e.cfg.From, recipients, []byte(builder.String()))
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}

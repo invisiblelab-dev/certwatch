@@ -24,7 +24,7 @@ func newAddDomainCommand() *cobra.Command {
 
 	addDomainCommand.Flags().StringVar(&opts.Domain, "domain", "", "domain to be tracked")
 	addDomainCommand.Flags().Int32Var(&opts.DaysBefore, "days", 10, "number of days before expire")
-	addDomainCommand.Flags().StringVar(&opts.Path, "path", "certwatch.yaml", "define path to config file")
+	addDomainCommand.Flags().StringVar(&opts.Config, "config", "certwatch.yaml", "define path to config file")
 
 	cobra.CheckErr(addDomainCommand.MarkFlagRequired("domain"))
 
