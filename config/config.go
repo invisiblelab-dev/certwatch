@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/invisiblelab-dev/certwatch"
-	"gopkg.in/yaml.v3"
 )
 
 func ReadYaml(path string) (certwatch.Config, error) {
