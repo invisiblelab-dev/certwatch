@@ -92,7 +92,7 @@ func RunCheckAllCertificatesCommand(f *factory.Factory, cfg *certwatch.Config) e
 	}
 
 	if err := notifier.Notify("CertWatch Scan", msg); err != nil {
-		return fmt.Errorf("failed to tigger notifications: %w", err)
+		return fmt.Errorf("failed to trigger notifications: %w", err)
 	}
 
 	return nil
