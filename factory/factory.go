@@ -7,7 +7,7 @@ import (
 
 type Factory struct {
 	NotifierService func() notifications.NotifierService
-	Config          *certwatch.Config
+	Config          certwatch.Config
 }
 
 func NewNotifierService(f *Factory) func() notifications.NotifierService {

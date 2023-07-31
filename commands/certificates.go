@@ -35,11 +35,11 @@ func newCheckAllCertificatesCommand(f *factory.Factory) *cobra.Command {
 		Short: "Check if your added domains are close to end",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadYaml(opts.Path)
-			f.Config = &cfg
+			f.Config = cfg
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
 			}
-			if err := runners.RunCheckAllCertificatesCommand(f, &cfg); err != nil {
+			if err := runners.RunCheckAllCertificatesCommand(f); err != nil {
 				return fmt.Errorf("check-all: %w", err)
 			}
 

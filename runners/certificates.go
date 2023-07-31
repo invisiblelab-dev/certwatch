@@ -78,14 +78,14 @@ func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) error 
 	return nil
 }
 
-func RunCheckAllCertificatesCommand(f *factory.Factory, cfg *certwatch.Config) error {
+func RunCheckAllCertificatesCommand(f *factory.Factory) error {
 	notifier := f.NotifierService()
-	certificates, err := scanAll(cfg.Domains, cfg.Refresh)
+	certificates, err := scanAll(f.Config.Domains, f.Config.Refresh)
 	if err != nil {
 		return fmt.Errorf("failed to scan certificates: %w", err)
 	}
 
-	domainDeadlines := calculateDaysToDeadline(certificates, cfg)
+	domainDeadlines := calculateDaysToDeadline(certificates, &f.Config)
 	msg, err := notifications.ComposeMessage(domainDeadlines)
 	if err != nil {
 		return fmt.Errorf("failed to compose message: %w", err)
