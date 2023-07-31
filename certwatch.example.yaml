@@ -1,10 +1,13 @@
+---
+
 domains:
   - name: https://www.invisiblelab.dev/
-      days: 10
+    days: 10
   - name: <domain url>
-      days: <days to expire for email/slack notification>
+    days: <days to expire for email/slack notification>
 notifications:
   email:
+    enabled: true
     username: <smtpUsername>
     password: <smtpPassword>
     smtphost: <smtpHost>
@@ -12,7 +15,11 @@ notifications:
     from: <notification email from address>
     to: <notification email to address>
   slack:
+    enabled: true
     webhook: <slack-webhook-key>
+  stdout:
+    enabled: true
+
 cache:
   path: /Users/user/Desktop
   refresh: <limit in seconds since last query to get certificate info>
