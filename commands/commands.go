@@ -31,7 +31,6 @@ func Parse() *cobra.Command {
 		return ErrSilent
 	})
 
-	rootCmd.AddCommand(newAddDomainCommand())
 	rootCmd.AddCommand(newCheckAllCertificatesCommand(f))
 	rootCmd.AddCommand(newCheckCertificatesCommand())
 

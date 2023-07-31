@@ -1,10 +1,9 @@
 ---
-
 domains:
-  - name: https://www.invisiblelab.dev/
-    days: 10
+  - name: www.invisiblelab.dev
+    threshold: 10
   - name: <domain url>
-    days: <days to expire for email/slack notification>
+    threshold: <days to certificate expiration for email/slack notification>
 notifications:
   email:
     enabled: true
