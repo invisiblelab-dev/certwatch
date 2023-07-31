@@ -3,7 +3,6 @@ domains:
       days: 10
   - name: <domain url>
       days: <days to expire for email/slack notification>
-refresh: <limit of seconds since last query to get certificate info>
 notifications:
   email:
     username: <smtpUsername>
@@ -14,3 +13,6 @@ notifications:
     to: <notification email to address>
   slack:
     webhook: <slack-webhook-key>
+cache:
+  path: /Users/user/Desktop
+  refresh: <limit in seconds since last query to get certificate info>

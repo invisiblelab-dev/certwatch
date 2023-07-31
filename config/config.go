@@ -43,7 +43,7 @@ func ReadQueries(path string) (map[string]certwatch.DomainQuery, error) {
 	if path != "" {
 		pathBuilder.WriteString(path)
 	} else {
-		cacheDir, err := os.UserConfigDir()
+		cacheDir, err := os.UserCacheDir()
 		if err != nil {
 			return queries, fmt.Errorf("failed to determine cache location: %w", err)
 		}
@@ -81,7 +81,7 @@ func WriteQueries(data map[string]certwatch.DomainQuery, path string) error {
 	if path != "" {
 		pathBuilder.WriteString(path)
 	} else {
-		cacheDir, err := os.UserConfigDir()
+		cacheDir, err := os.UserCacheDir()
 		if err != nil {
 			return fmt.Errorf("failed to determine cache location: %w", err)
 		}
