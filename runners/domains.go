@@ -4,15 +4,14 @@ import (
 	"errors"
 	"fmt"
 
-	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch"
 	"github.com/invisiblelab-dev/certwatch/config"
-	"gopkg.in/yaml.v3"
 )
 
 func AddDomain(domain string, daysToNotify int, path string) error {
 	domains, err := config.ReadYaml(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while reading yaml file %s: %w", path, err)
 	}
 	newDomain := certwatch.Domain{Name: domain, NotificationDays: daysToNotify}
 
@@ -23,28 +22,28 @@ func AddDomain(domain string, daysToNotify int, path string) error {
 	}
 
 	domains.Domains = append(domains.Domains, newDomain)
-	marshalData, err := yaml.Marshal(&domains)
-	if err != nil {
-		fmt.Println("error marshalling file: ", err)
-		return err
+
+	if err := config.WriteYaml(domains, path); err != nil {
+		return fmt.Errorf("failed to add domain: %w", err)
 	}
-	return config.WriteYaml(marshalData, path)
+
+	return nil
 }
 
-func RunAddDomainCommand(opts certwatch.AddDomainOptions) {
-	url, err := certwatch.AddHttps(opts.Domain)
+func RunAddDomainCommand(opts certwatch.AddDomainOptions) error {
+	url, err := certwatch.AddHTTPS(opts.Domain)
 	if err != nil {
-		fmt.Println("error parsing domain:", err)
+		return fmt.Errorf("error parsing domain: %w", err)
 	}
 
 	if opts.DaysBefore <= 0 {
-		fmt.Printf("Days cant be <=0: %v\n", opts.DaysBefore)
-		return
+		return fmt.Errorf("days can't be <= 0: %d", opts.DaysBefore)
 	}
 
 	err = AddDomain(url, int(opts.DaysBefore), opts.Path)
 	if err != nil {
-		fmt.Printf("failed to add url: %v\n", err)
-		return
+		return fmt.Errorf("failed to add url: %w", err)
 	}
+
+	return nil
 }

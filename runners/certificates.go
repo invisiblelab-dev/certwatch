@@ -2,18 +2,18 @@ package runners
 
 import (
 	"fmt"
+	"os"
 	"time"
 
-	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch"
 	"github.com/invisiblelab-dev/certwatch/config"
-
 	"github.com/invisiblelab-dev/certwatch/notifications"
 )
 
 func getCertificates(domains []certwatch.Domain, refresh int) (map[string]certwatch.DomainQuery, error) {
 	queries, err := config.ReadQueries()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get queries: %w", err)
 	}
 
 	for _, domain := range domains {
@@ -23,7 +23,7 @@ func getCertificates(domains []certwatch.Domain, refresh int) (map[string]certwa
 		if int(timeSinceLastCheck) >= refresh {
 			certificate, err := certwatch.Certificate(domain.Name)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to fetch certificate: %w", err)
 			}
 
 			peerCertificate := certificate.PeerCertificates[0]
@@ -37,8 +37,9 @@ func getCertificates(domains []certwatch.Domain, refresh int) (map[string]certwa
 
 	err = config.WriteQueries(queries)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to write queries: %w", err)
 	}
+
 	return queries, nil
 }
 
@@ -56,50 +57,52 @@ func calculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, conf
 		}
 		domainsDeadlines = append(domainsDeadlines, deadline)
 	}
+
 	return domainsDeadlines
 }
 
-func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
+// nolint: forbidigo
+func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) error {
 	for _, domain := range opts.Domains {
 		fmt.Println("Domain:", domain)
 		certificate, err := certwatch.Certificate(domain)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to fetch domain [%s]: %v", domain, err)
 			continue
 		}
 		peerCertificate := certificate.PeerCertificates[0]
 		fmt.Println(peerCertificate.String())
 	}
+
+	return nil
 }
 
-func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) {
+func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) error {
 	configData, err := config.ReadYaml(opts.Path)
 	if err != nil {
-		fmt.Println("could not read config file", err)
-		return
+		return fmt.Errorf("could not read config file [%s]: %w", opts.Path, err)
 	}
 
 	certificates, err := getCertificates(configData.Domains, configData.Refresh)
 	if err != nil {
-		fmt.Println("failed to get certificates", err)
-		return
+		return fmt.Errorf("failed to get certificates: %w", err)
 	}
 
 	domainDeadlines := calculateDaysToDeadline(certificates, configData)
 	message, err := notifications.ComposeMessage(domainDeadlines)
 	if err != nil {
-		fmt.Println("failed to compose message:", err)
-		return
+		return fmt.Errorf("failed to compose message: %w", err)
 	}
 
 	err = notifications.SendEmail(message, configData.Notifications.Email)
 	if err != nil {
-		fmt.Println("failed to send email:", err)
-		return
+		return fmt.Errorf("email error: %w", err)
 	}
 
 	err = notifications.SendSlack(message, configData.Notifications.Slack)
 	if err != nil {
-		fmt.Println("failed to send slack:", err)
-		return
+		return fmt.Errorf("failed to send slack notification: %w", err)
 	}
+
+	return nil
 }

@@ -7,13 +7,14 @@ import (
 	certwatch "github.com/invisiblelab-dev/certwatch"
 )
 
+// TODO: later review logic
 func ComposeMessage(domainDeadlines []certwatch.DomainDeadline) (string, error) {
 	var subject string
 	for _, domainDeadline := range domainDeadlines {
 		if domainDeadline.OnDeadline {
-			domain, err := certwatch.RemoveHttps(domainDeadline.Domain)
+			domain, err := certwatch.RemoveHTTPS(domainDeadline.Domain)
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("failed to remove HTTPS form URL: %w", err)
 			}
 			var message string
 			if domainDeadline.DaysTillDeadline <= 0 {
@@ -26,10 +27,10 @@ func ComposeMessage(domainDeadlines []certwatch.DomainDeadline) (string, error) 
 					fmt.Sprintf("\n\n %s certificate expires in %d days.",
 						domain,
 						int64(domainDeadline.DaysTillDeadline))
-
 			}
-			subject = subject + message
+			subject += message
 		}
 	}
+
 	return subject, nil
 }
