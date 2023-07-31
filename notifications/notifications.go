@@ -40,10 +40,7 @@ func ComposeMessage(domainDeadlines []certwatch.DomainDeadline) (string, error) 
 	message := strings.Builder{}
 	for _, domainDeadline := range domainDeadlines {
 		if domainDeadline.OnDeadline {
-			domain, err := certwatch.RemoveHTTPS(domainDeadline.Domain)
-			if err != nil {
-				return "", fmt.Errorf("failed to remove HTTPS form URL: %w", err)
-			}
+			domain := domainDeadline.Domain
 			if domainDeadline.DaysTillDeadline <= 0 {
 				days := int64(math.Abs(domainDeadline.DaysTillDeadline))
 				message.WriteString(fmt.Sprintf("- %s certificate has expired %d days ago.", domain, days))
