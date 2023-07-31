@@ -18,13 +18,13 @@ func ReadYaml(path string) (certwatch.Config, error) {
 		return certwatch.Config{}, fmt.Errorf("failed to read config file [%s]: %w", path, err)
 	}
 
-	var domains certwatch.Config
-	err = yaml.Unmarshal(data, &domains)
+	var cfg certwatch.Config
+	err = cfg.UnmarshalYAML(data)
 	if err != nil {
 		return certwatch.Config{}, fmt.Errorf("failed to unmarshal config file [%s]: %w", path, err)
 	}
 
-	return domains, nil
+	return cfg, nil
 }
 
 func WriteYaml(data []byte, path string) error {

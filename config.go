@@ -1,5 +1,12 @@
 package certwatch
 
+import (
+	"fmt"
+	"regexp"
+
+	"gopkg.in/yaml.v3"
+)
+
 type Slack struct {
 	Enabled bool `yml:"enabled"`
 	Webhook string
@@ -37,4 +44,20 @@ type Config struct {
 		Slack  `yml:"slack"`
 		Stdout `yml:"stdout"`
 	} `yml:"notifications"`
+}
+
+func (c *Config) UnmarshalYAML(payload []byte) error {
+	re := regexp.MustCompile(`^(?:[_a-z0-9](?:[_a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?)?$`)
+
+	if err := yaml.Unmarshal(payload, &c); err != nil {
+		return fmt.Errorf("error parsing yaml: %w", err)
+	}
+
+	for _, domain := range c.Domains {
+		if !re.Match([]byte(domain.Name)) {
+			return fmt.Errorf("invalid domain name [%s]", domain.Name)
+		}
+	}
+
+	return nil
 }
