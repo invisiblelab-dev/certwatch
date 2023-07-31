@@ -24,9 +24,14 @@ type Domain struct {
 	Threshold int    `yaml:"threshold"`
 }
 
+type Cache struct {
+	Path    string `yml:"path"`
+	Refresh int    `yml:"refresh"`
+}
+
 type Config struct {
 	Domains       []Domain `yml:"domains"`
-	Refresh       int      `yml:"refresh"`
+	Cache         `yml:"cache"`
 	Notifications struct {
 		Email  `yml:"email"`
 		Slack  `yml:"slack"`

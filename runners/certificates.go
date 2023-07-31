@@ -11,8 +11,8 @@ import (
 	"github.com/invisiblelab-dev/certwatch/notifications"
 )
 
-func scanAll(domains []certwatch.Domain, refresh int) (map[string]certwatch.DomainQuery, error) {
-	queries, err := config.ReadQueries()
+func scanAll(domains []certwatch.Domain, cache certwatch.Cache) (map[string]certwatch.DomainQuery, error) {
+	queries, err := config.ReadQueries(cache.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get queries: %w", err)
 	}
@@ -21,7 +21,7 @@ func scanAll(domains []certwatch.Domain, refresh int) (map[string]certwatch.Doma
 		domainLastCheck := queries[domain.Name].LastCheck
 		timeSinceLastCheck := time.Since(domainLastCheck).Seconds()
 
-		if int(timeSinceLastCheck) >= refresh {
+		if int(timeSinceLastCheck) >= cache.Refresh {
 			certificate, err := certwatch.Certificate(domain.Name)
 			if err != nil {
 				return nil, fmt.Errorf("failed to fetch certificate: %w", err)
@@ -36,7 +36,7 @@ func scanAll(domains []certwatch.Domain, refresh int) (map[string]certwatch.Doma
 		}
 	}
 
-	err = config.WriteQueries(queries)
+	err = config.WriteQueries(queries, cache.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write queries: %w", err)
 	}
@@ -80,7 +80,7 @@ func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) error 
 
 func RunCheckAllCertificatesCommand(f *factory.Factory) error {
 	notifier := f.NotifierService()
-	certificates, err := scanAll(f.Config.Domains, f.Config.Refresh)
+	certificates, err := scanAll(f.Config.Domains, f.Config.Cache)
 	if err != nil {
 		return fmt.Errorf("failed to scan certificates: %w", err)
 	}
