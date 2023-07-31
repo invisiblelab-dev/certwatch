@@ -1,6 +1,9 @@
 package notifications
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type StdoutNotifier struct{}
 
@@ -9,7 +12,7 @@ func NewStdoutNotifier() *StdoutNotifier {
 }
 
 func (s *StdoutNotifier) Notify(_ string, message string, _ ...string) error {
-	fmt.Println(message)
+	fmt.Fprintln(os.Stdout, message)
 	return nil
 }
 
