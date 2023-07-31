@@ -1,70 +1,108 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 
-	certwatch "github.com/invisiblelab-dev/certwatch"
-	"gopkg.in/yaml.v3"
+	"github.com/invisiblelab-dev/certwatch"
 )
 
-func ReadYaml(path string) (certwatch.ConfigFile, error) {
+func ReadYaml(path string) (certwatch.Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Println("File reading error: ", err)
-		return certwatch.ConfigFile{}, err
+		return certwatch.Config{}, fmt.Errorf("failed to read config file [%s]: %w", path, err)
 	}
 
-	var domains certwatch.ConfigFile
-	err = yaml.Unmarshal(data, &domains)
+	var cfg certwatch.Config
+	err = cfg.UnmarshalYAML(data)
 	if err != nil {
-		fmt.Println("File parsing error: ", err)
-		return certwatch.ConfigFile{}, err
+		return certwatch.Config{}, fmt.Errorf("failed to unmarshal config file [%s]: %w", path, err)
 	}
-	return domains, nil
+
+	return cfg, nil
 }
 
 func WriteYaml(data []byte, path string) error {
-	err := os.WriteFile(path, data, 0644)
+	err := os.WriteFile(path, data, 0600)
 	if err != nil {
-		fmt.Println("not writing file, error: ", err)
-		return err
+		return fmt.Errorf("[config.WriteFile] failed to write yaml file %s: %w", path, err)
 	}
+
 	return nil
 }
 
-func ReadQueries() (map[string]certwatch.DomainQuery, error) {
+func ReadQueries(path string) (map[string]certwatch.DomainQuery, error) {
 	queries := make(map[string]certwatch.DomainQuery)
+	pathBuilder := strings.Builder{}
 
-	fileName := "queries.yaml"
-	data, err := os.ReadFile(fileName)
+	if path != "" {
+		pathBuilder.WriteString(path)
+	} else {
+		cacheDir, err := os.UserCacheDir()
+		if err != nil {
+			return queries, fmt.Errorf("failed to determine cache location: %w", err)
+		}
+		pathBuilder.WriteString(cacheDir)
+	}
+
+	pathBuilder.WriteString("/certwatch/cache.json")
+
+	filePath := pathBuilder.String()
+
+	data, err := os.ReadFile(filePath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return queries, nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read queries file [%s]: %w", filePath, err)
 	}
 
-	err = yaml.Unmarshal(data, &queries)
+	err = json.Unmarshal(data, &queries)
 	if err != nil {
-		fmt.Println("File unmarshall error: ", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal config file [%s]: %w", filePath, err)
 	}
 
 	return queries, nil
 }
 
-func WriteQueries(data map[string]certwatch.DomainQuery) error {
-	marshalData, err := yaml.Marshal(&data)
+func WriteQueries(data map[string]certwatch.DomainQuery, path string) error {
+	marshalData, err := json.Marshal(&data)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal queries payload: %w", err)
 	}
 
-	err = os.WriteFile("queries.yaml", marshalData, 0644)
+	pathBuilder := strings.Builder{}
+
+	if path != "" {
+		pathBuilder.WriteString(path)
+	} else {
+		cacheDir, err := os.UserCacheDir()
+		if err != nil {
+			return fmt.Errorf("failed to determine cache location: %w", err)
+		}
+		pathBuilder.WriteString(cacheDir)
+	}
+
+	pathBuilder.WriteString("/certwatch")
+
+	cachePath := pathBuilder.String()
+	if _, err := os.Stat(cachePath); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(cachePath, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("failed to create cache folder: %w", err)
+		}
+	}
+
+	pathBuilder.WriteString("/cache.json")
+	filePath := pathBuilder.String()
+
+	err = os.WriteFile(filePath, marshalData, 0600)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to writes queries [%s]: %w", filePath, err)
 	}
 	return nil
 }

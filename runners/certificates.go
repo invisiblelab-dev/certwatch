@@ -2,28 +2,29 @@ package runners
 
 import (
 	"fmt"
+	"os"
 	"time"
 
-	certwatch "github.com/invisiblelab-dev/certwatch"
+	"github.com/invisiblelab-dev/certwatch"
 	"github.com/invisiblelab-dev/certwatch/config"
-
+	"github.com/invisiblelab-dev/certwatch/factory"
 	"github.com/invisiblelab-dev/certwatch/notifications"
 )
 
-func getCertificates(domains []certwatch.Domain, refresh int) (map[string]certwatch.DomainQuery, error) {
-	queries, err := config.ReadQueries()
+func scanAll(domains []certwatch.Domain, cache certwatch.Cache) (map[string]certwatch.DomainQuery, error) {
+	queries, err := config.ReadQueries(cache.Path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get queries: %w", err)
 	}
 
 	for _, domain := range domains {
 		domainLastCheck := queries[domain.Name].LastCheck
 		timeSinceLastCheck := time.Since(domainLastCheck).Seconds()
 
-		if int(timeSinceLastCheck) >= refresh {
+		if int(timeSinceLastCheck) >= cache.Refresh {
 			certificate, err := certwatch.Certificate(domain.Name)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to fetch certificate: %w", err)
 			}
 
 			peerCertificate := certificate.PeerCertificates[0]
@@ -35,19 +36,20 @@ func getCertificates(domains []certwatch.Domain, refresh int) (map[string]certwa
 		}
 	}
 
-	err = config.WriteQueries(queries)
+	err = config.WriteQueries(queries, cache.Path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to write queries: %w", err)
 	}
+
 	return queries, nil
 }
 
-func calculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, configData certwatch.ConfigFile) []certwatch.DomainDeadline {
+func calculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, configData *certwatch.Config) []certwatch.DomainDeadline {
 	domainsDeadlines := []certwatch.DomainDeadline{}
 	for _, domain := range configData.Domains {
 		timeHours := time.Until(certificates[domain.Name].NotAfter)
 		timeDays := timeHours.Hours() / 24
-		onDeadline := timeDays <= float64(domain.NotificationDays)
+		onDeadline := timeDays <= float64(domain.Threshold)
 
 		deadline := certwatch.DomainDeadline{
 			Domain:           domain.Name,
@@ -56,50 +58,42 @@ func calculateDaysToDeadline(certificates map[string]certwatch.DomainQuery, conf
 		}
 		domainsDeadlines = append(domainsDeadlines, deadline)
 	}
+
 	return domainsDeadlines
 }
 
-func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) {
+// nolint: forbidigo
+func RunCheckCertificatesCommand(opts certwatch.CheckCertificatesOptions) error {
 	for _, domain := range opts.Domains {
 		fmt.Println("Domain:", domain)
 		certificate, err := certwatch.Certificate(domain)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to fetch domain [%s]: %v", domain, err)
 			continue
 		}
 		peerCertificate := certificate.PeerCertificates[0]
 		fmt.Println(peerCertificate.String())
 	}
+
+	return nil
 }
 
-func RunCheckAllCertificatesCommand(opts certwatch.CheckAllCertificatesOptions) {
-	configData, err := config.ReadYaml(opts.Path)
+func RunCheckAllCertificatesCommand(f *factory.Factory) error {
+	notifier := f.NotifierService()
+	certificates, err := scanAll(f.Config.Domains, f.Config.Cache)
 	if err != nil {
-		fmt.Println("could not read config file", err)
-		return
+		return fmt.Errorf("failed to scan certificates: %w", err)
 	}
 
-	certificates, err := getCertificates(configData.Domains, configData.Refresh)
+	domainDeadlines := calculateDaysToDeadline(certificates, &f.Config)
+	msg, err := notifications.ComposeMessage(domainDeadlines)
 	if err != nil {
-		fmt.Println("failed to get certificates", err)
-		return
+		return fmt.Errorf("failed to compose message: %w", err)
 	}
 
-	domainDeadlines := calculateDaysToDeadline(certificates, configData)
-	message, err := notifications.ComposeMessage(domainDeadlines)
-	if err != nil {
-		fmt.Println("failed to compose message:", err)
-		return
+	if err := notifier.Notify("CertWatch Scan", msg); err != nil {
+		return fmt.Errorf("failed to trigger notifications: %w", err)
 	}
 
-	err = notifications.SendEmail(message, configData.Notifications.Email)
-	if err != nil {
-		fmt.Println("failed to send email:", err)
-		return
-	}
-
-	err = notifications.SendSlack(message, configData.Notifications.Slack)
-	if err != nil {
-		fmt.Println("failed to send slack:", err)
-		return
-	}
+	return nil
 }

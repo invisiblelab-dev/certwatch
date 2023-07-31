@@ -2,26 +2,89 @@ package notifications
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
-
-	certwatch "github.com/invisiblelab-dev/certwatch"
+	"time"
 )
 
-func SendSlack(subject string, slackHook certwatch.Slack) error {
+type Text struct {
+	Type string   `json:"type"`
+	Text TextBody `json:"text"`
+}
 
-	url := "https://hooks.slack.com/services/" + slackHook.Webhook
+type TextBody struct {
+	Type  string `json:"type"`
+	Text  string `json:"text"`
+	Emoji bool   `json:"emoji,omitempty"`
+}
 
-	var jsonStr = []byte(fmt.Sprintf(`{"text": "%s"}`, subject))
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+type SlackNotifier struct {
+	Webhook string
+}
+
+func NewSlackNotifier(webhook string) *SlackNotifier {
+	return &SlackNotifier{webhook}
+}
+
+func (s *SlackNotifier) Notify(title string, message string, recipients ...string) error {
+	payload, err := json.Marshal(s.blocks(title, message))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal slack payload: %w", err)
 	}
 
-	req.Header.Set("X-Custom-Header", "myvalue")
-	req.Header.Set("Content-Type", "application/json")
+	if err := s.post(recipients[0], payload); err != nil {
+		return fmt.Errorf("failed to send slack message: %w", err)
+	}
 
+	return nil
+}
+
+func (s *SlackNotifier) Recipient() string {
+	return s.Webhook
+}
+
+func (s *SlackNotifier) blocks(title string, message string) map[string]any {
+	return map[string]any{
+		"blocks": []Text{
+			{
+				Type: "section",
+				Text: TextBody{
+					Type: "mrkdwn",
+					Text: fmt.Sprintf("🚨 *%s*", title),
+				},
+			},
+			{
+				Type: "section",
+				Text: TextBody{
+					Type: "mrkdwn",
+					Text: message,
+				},
+			},
+		},
+	}
+}
+
+func (s *SlackNotifier) post(recipient string, payload []byte) error {
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, recipient, bytes.NewBuffer(payload))
+	if err != nil {
+		return fmt.Errorf("failed to setup slack request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
-	_, err = client.Do(req)
-	return err
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to post slack message: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	return nil
 }
