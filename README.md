@@ -31,7 +31,7 @@ Clone the repo and complete the config file.
 
 -   domains:
     you can manually add them or via the cli.
-    -   name: is the domain url. It should include the subdomain, domain and top level domain without the protocol (e.g. [www.invisiblelab.dev](https://www.invisiblelab.dev/).
+    -   name: is the domain url. It should include the subdomain, domain and top level domain without the protocol (e.g. [www.invisiblelab.dev](https://www.invisiblelab.dev/)).
     -   threshold: days until the certificate expires that you want to receive notification via slack and/or email.
 -   refresh: days since last query you want to re-request the certificates. See the [Checking Certificates](https://github.com/invisiblelab-dev/certwatch#checking-certificates) section for deeper explanation.
 -   notifications:
