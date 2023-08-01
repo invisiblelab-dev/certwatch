@@ -43,7 +43,7 @@ Clone the repo and complete the config file.
         -   from: email address that will be the from address of the email notifications.
         -   to: email address that will be the to address of the email notifications.
     -   slack:
-        -   webhook: webhooks key. The complete url webhook should be https://hooks.slack.com/services/ + webhook. (e.g. https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX). For more information check [slack documentation](https://api.slack.com/messaging/webhooks#create_a_webhook).
+        -   webhook: webhook url (e.g. https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX). For more information check [slack documentation](https://api.slack.com/messaging/webhooks#create_a_webhook).
 
 ## Adding a domain
 
