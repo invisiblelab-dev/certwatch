@@ -30,7 +30,7 @@ func NewSlackNotifier(webhook string) *SlackNotifier {
 }
 
 func (s *SlackNotifier) Notify(title string, message MessageData, recipients ...string) error {
-	msg := strings.Join(message.Message, "\n")
+	msg := strings.Join(message.Messages, "\n")
 	payload, err := json.Marshal(s.blocks(title, msg))
 	if err != nil {
 		return fmt.Errorf("failed to marshal slack payload: %w", err)

@@ -8,7 +8,7 @@ import (
 )
 
 type MessageData struct {
-	Message []string
+	Messages []string
 }
 
 type Notifier interface {
@@ -46,10 +46,10 @@ func ComposeMessage(domainDeadlines []certwatch.DomainDeadline) (MessageData, er
 			domain := domainDeadline.Domain
 			if domainDeadline.DaysTillDeadline <= 0 {
 				days := int64(math.Abs(domainDeadline.DaysTillDeadline))
-				message.Message = append(message.Message, fmt.Sprintf("- %s certificate has expired %d days ago.", domain, days))
+				message.Messages = append(message.Messages, fmt.Sprintf("- %s certificate has expired %d days ago.", domain, days))
 			} else {
 				days := int64(domainDeadline.DaysTillDeadline)
-				message.Message = append(message.Message, fmt.Sprintf("- %s certificate expires in %d days.", domain, days))
+				message.Messages = append(message.Messages, fmt.Sprintf("- %s certificate expires in %d days.", domain, days))
 			}
 		}
 	}

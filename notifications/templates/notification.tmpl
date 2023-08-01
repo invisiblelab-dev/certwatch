@@ -1,7 +1,7 @@
 {{define "subject"}}CertWatch Scan{{end}}
 {{define "plain"}}
  <table>
-  {{range .Message}}
+  {{range .Messages}}
   <tr><td>{{.}}</td></tr>
   {{end}}
  </table>
@@ -9,7 +9,7 @@
 
 {{define "html"}}
 <table>
-  {{range .Message}}
+  {{range .Messages}}
   <tr><td>{{.}}</td></tr>
   {{end}}
  </table>

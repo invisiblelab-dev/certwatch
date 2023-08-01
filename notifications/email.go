@@ -54,7 +54,7 @@ func (e *EmailNotifier) Notify(title string, data MessageData, recipients ...str
 	builder.WriteString(fmt.Sprintf("Content-Type: text/plain; charset=%q\n", "utf-8"))
 	builder.WriteString("Content-Transfer-Encoding: quoted-printable\n")
 	builder.WriteString("Content-Disposition: inline\n\n")
-	builder.WriteString(fmt.Sprintf("%s\n\n", strings.Join(data.Message, "\n")))
+	builder.WriteString(fmt.Sprintf("%s\n\n", strings.Join(data.Messages, "\n")))
 	builder.WriteString(fmt.Sprintf("--%d\n", boundary))
 	builder.WriteString(fmt.Sprintf("Content-Type: text/html; charset=%q\n", "utf-8"))
 	builder.WriteString("Content-Transfer-Encoding: quoted-printable\n")
