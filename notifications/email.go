@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"net/smtp"
 	"path"
 	"strings"
 	"text/template"
-	"time"
-
-	"gopkg.in/mail.v2"
 )
 
 //go:embed "templates"
@@ -38,34 +36,39 @@ func (e *EmailNotifier) Notify(title string, data MessageData, recipients ...str
 		return fmt.Errorf("failed to parse email template: %w", err)
 	}
 
-	subject := new(bytes.Buffer)
-	if err = tmpl.ExecuteTemplate(subject, "subject", data); err != nil {
-		return fmt.Errorf("failed to hydrate subject email template: %w", err)
-	}
-
-	plaintext := new(bytes.Buffer)
-	if err = tmpl.ExecuteTemplate(plaintext, "plain", data); err != nil {
-		return fmt.Errorf("failed to hydrate plaintext email template: %w", err)
-	}
-
 	html := new(bytes.Buffer)
 	if err = tmpl.ExecuteTemplate(html, "html", data); err != nil {
 		return fmt.Errorf("failed to hydrate html email template: %w", err)
 	}
 
-	msg := mail.NewMessage()
-	msg.SetHeader("To", strings.Join(recipients, ","))
-	msg.SetHeader("From", e.cfg.From)
-	msg.SetHeader("Subject", subject.String())
-	msg.SetBody("text/plain", plaintext.String())
-	msg.AddAlternative("text/html", html.String())
+	// nolint: gosec
+	//boundary := rand.Int()
+	boundary := 1
+	subject := "CertWatch Scan"
+	builder := strings.Builder{}
+	builder.WriteString(fmt.Sprintf("From: %s\n", e.cfg.From))
+	builder.WriteString(fmt.Sprintf("To: %s\n", strings.Join(recipients, ",")))
+	builder.WriteString(fmt.Sprintf("Subject: %s\n", subject))
+	builder.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=\"%d\"\n\n", boundary))
+	builder.WriteString(fmt.Sprintf("--%d\n", boundary))
+	builder.WriteString(fmt.Sprintf("Content-Type: text/plain; charset=%q\n", "utf-8"))
+	builder.WriteString("Content-Transfer-Encoding: quoted-printable\n")
+	builder.WriteString("Content-Disposition: inline\n\n")
+	builder.WriteString(fmt.Sprintf("%s\n\n", strings.Join(data.Message, "\n")))
+	builder.WriteString(fmt.Sprintf("--%d\n", boundary))
+	builder.WriteString(fmt.Sprintf("Content-Type: text/html; charset=%q\n", "utf-8"))
+	builder.WriteString("Content-Transfer-Encoding: quoted-printable\n")
+	builder.WriteString("Content-Disposition: inline\n\n")
+	builder.WriteString(fmt.Sprintf("%s\n\n", html.String()))
+	builder.WriteString(fmt.Sprintf("--%d--\n", boundary))
 
-	dialer := mail.NewDialer(e.cfg.Host, e.cfg.Port, e.cfg.Login, e.cfg.Password)
-	dialer.Timeout = 5 * time.Second
-
-	if err = dialer.DialAndSend(msg); err != nil {
+	addr := fmt.Sprintf("%s:%d", e.cfg.Host, e.cfg.Port)
+	auth := smtp.PlainAuth("", e.cfg.Login, e.cfg.Password, e.cfg.Host)
+	err = smtp.SendMail(addr, auth, e.cfg.From, recipients, []byte(builder.String()))
+	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
+
 	return nil
 }
 
