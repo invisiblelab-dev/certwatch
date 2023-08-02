@@ -1,0 +1,16 @@
+{{define "subject"}}CertWatch Scan{{end}}
+{{define "plain"}}
+ <table>
+  {{range .Messages}}
+  <tr><td>{{.}}</td></tr>
+  {{end}}
+ </table>
+{{end}}
+
+{{define "html"}}
+<table>
+  {{range .Messages}}
+  <tr><td>{{.}}</td></tr>
+  {{end}}
+ </table>
+{{end}}

@@ -3,13 +3,16 @@ package notifications
 import (
 	"fmt"
 	"math"
-	"strings"
 
 	"github.com/invisiblelab-dev/certwatch"
 )
 
+type MessageData struct {
+	Messages []string
+}
+
 type Notifier interface {
-	Notify(title string, message string, recipients ...string) error
+	Notify(title string, message MessageData, recipients ...string) error
 	Recipient() string
 }
 
@@ -25,7 +28,7 @@ func (n *NotifierService) Append(notifier Notifier) {
 	n.notifiers = append(n.notifiers, notifier)
 }
 
-func (n *NotifierService) Notify(title string, message string) error {
+func (n *NotifierService) Notify(title string, message MessageData) error {
 	for _, notifier := range n.notifiers {
 		if err := notifier.Notify(title, message, notifier.Recipient()); err != nil {
 			return fmt.Errorf("failed to notify: %w", err)
@@ -36,21 +39,20 @@ func (n *NotifierService) Notify(title string, message string) error {
 }
 
 // TODO: review and move strings into embed template
-func ComposeMessage(domainDeadlines []certwatch.DomainDeadline) (string, error) {
-	message := strings.Builder{}
+func ComposeMessage(domainDeadlines []certwatch.DomainDeadline) (MessageData, error) {
+	var message MessageData
 	for _, domainDeadline := range domainDeadlines {
 		if domainDeadline.OnDeadline {
 			domain := domainDeadline.Domain
 			if domainDeadline.DaysTillDeadline <= 0 {
 				days := int64(math.Abs(domainDeadline.DaysTillDeadline))
-				message.WriteString(fmt.Sprintf("- %s certificate has expired %d days ago.", domain, days))
+				message.Messages = append(message.Messages, fmt.Sprintf("- %s certificate has expired %d days ago.", domain, days))
 			} else {
 				days := int64(domainDeadline.DaysTillDeadline)
-				message.WriteString(fmt.Sprintf("- %s certificate expires in %d days.", domain, days))
+				message.Messages = append(message.Messages, fmt.Sprintf("- %s certificate expires in %d days.", domain, days))
 			}
-			message.WriteString("\n")
 		}
 	}
 
-	return message.String(), nil
+	return message, nil
 }
